@@ -1,3 +1,4 @@
+
 // Import necessary components and hooks
 import React, { useState, useEffect } from 'react';
 import HeroSection from '@/components/codehub/HeroSection';
@@ -11,26 +12,26 @@ import { useToast } from '@/components/ui/use-toast';
 
 // Define the data outside of the component
 export const techTopicsData = [
-  { name: 'React', icon: '⚛️', description: 'Build interactive UIs', status: 'active', members: 42 },
-  { name: 'JavaScript', icon: '📜', description: 'Programming language', status: 'active', members: 78 },
-  { name: 'TypeScript', icon: '🔷', description: 'Typed JavaScript', status: 'active', members: 35 },
-  { name: 'Python', icon: '🐍', description: 'General-purpose language', status: 'busy', members: 91 },
-  { name: 'Java', icon: '☕', description: 'Enterprise applications', status: 'idle', members: 27 },
-  { name: 'C#', icon: '#️⃣', description: '.NET development', status: 'idle', members: 19 },
+  { name: 'React', icon: '⚛️', description: 'Build interactive UIs', status: 'active' as const, members: 42 },
+  { name: 'JavaScript', icon: '📜', description: 'Programming language', status: 'active' as const, members: 78 },
+  { name: 'TypeScript', icon: '🔷', description: 'Typed JavaScript', status: 'active' as const, members: 35 },
+  { name: 'Python', icon: '🐍', description: 'General-purpose language', status: 'busy' as const, members: 91 },
+  { name: 'Java', icon: '☕', description: 'Enterprise applications', status: 'idle' as const, members: 27 },
+  { name: 'C#', icon: '#️⃣', description: '.NET development', status: 'idle' as const, members: 19 },
 ];
 
 export const databaseData = [
-  { name: 'MongoDB', icon: '🍃', description: 'NoSQL database', status: 'active', members: 23 },
-  { name: 'PostgreSQL', icon: '🐘', description: 'Advanced SQL', status: 'busy', members: 31 },
-  { name: 'MySQL', icon: '🐬', description: 'Popular SQL database', status: 'active', members: 45 },
-  { name: 'Redis', icon: '🔴', description: 'In-memory data store', status: 'idle', members: 12 },
+  { name: 'MongoDB', icon: '🍃', description: 'NoSQL database', status: 'active' as const, members: 23 },
+  { name: 'PostgreSQL', icon: '🐘', description: 'Advanced SQL', status: 'busy' as const, members: 31 },
+  { name: 'MySQL', icon: '🐬', description: 'Popular SQL database', status: 'active' as const, members: 45 },
+  { name: 'Redis', icon: '🔴', description: 'In-memory data store', status: 'idle' as const, members: 12 },
 ];
 
 export const aiData = [
-  { name: 'Machine Learning', icon: '🧠', description: 'Algorithms and statistical models', status: 'active', members: 56 },
-  { name: 'Neural Networks', icon: '🕸️', description: 'Deep learning', status: 'busy', members: 34 },
-  { name: 'Natural Language Processing', icon: '💬', description: 'Text processing', status: 'active', members: 48 },
-  { name: 'Computer Vision', icon: '👁️', description: 'Image recognition', status: 'idle', members: 29 },
+  { name: 'Machine Learning', icon: '🧠', description: 'Algorithms and statistical models', status: 'active' as const, members: 56 },
+  { name: 'Neural Networks', icon: '🕸️', description: 'Deep learning', status: 'busy' as const, members: 34 },
+  { name: 'Natural Language Processing', icon: '💬', description: 'Text processing', status: 'active' as const, members: 48 },
+  { name: 'Computer Vision', icon: '👁️', description: 'Image recognition', status: 'idle' as const, members: 29 },
 ];
 
 export const notificationsData = [
