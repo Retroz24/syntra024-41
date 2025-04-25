@@ -5,11 +5,12 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Users, Wrench, Code, Zap, Database, Brain, Search, Sun, Moon, Sparkles, Hash } from 'lucide-react';
+import { MessageSquare, Users, Wrench, Code, Zap, Database, Brain, Search, Hash, BookOpen } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { CreateRoomDialog } from '@/components/CreateRoomDialog';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import { useDarkMode } from '@/contexts/DarkModeContext';
+import JoinRoomDialog from '@/components/JoinRoomDialog';
 
 const CodeHub = () => {
   const { toast } = useToast();
@@ -19,10 +20,16 @@ const CodeHub = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [joinRoomDialog, setJoinRoomDialog] = useState<{open: boolean, roomId: number, roomName: string, roomLanguage: string}>({
+    open: false,
+    roomId: 0,
+    roomName: '',
+    roomLanguage: ''
+  });
 
   const categories = [
     { name: "Programming", icon: <Code className="w-5 h-5" />, color: "bg-blue-500" },
-    { name: "DSA", icon: <Sparkles className="w-5 h-5" />, color: "bg-purple-500" },
+    { name: "DSA", icon: <Zap className="w-5 h-5" />, color: "bg-purple-500" },
     { name: "Database", icon: <Database className="w-5 h-5" />, color: "bg-green-500" },
     { name: "AI Integration", icon: <Brain className="w-5 h-5" />, color: "bg-orange-500" },
   ];
@@ -90,8 +97,13 @@ const CodeHub = () => {
     }
   ];
 
-  const handleJoinRoom = (roomId: number) => {
-    navigate(`/room/${roomId}`);
+  const handleJoinRoom = (roomId: number, roomName: string, roomLanguage: string) => {
+    setJoinRoomDialog({
+      open: true,
+      roomId,
+      roomName,
+      roomLanguage
+    });
   };
 
   const handleCreateRoom = () => {
@@ -112,7 +124,7 @@ const CodeHub = () => {
       });
       
       setTimeout(() => {
-        navigate(`/room/${randomRoom.id}`);
+        handleJoinRoom(randomRoom.id, randomRoom.name, randomRoom.language);
       }, 1000);
     }, 2000);
   };
@@ -128,7 +140,7 @@ const CodeHub = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark bg-[#1A1F2C] text-white' : 'bg-gradient-to-b from-blue-50 to-purple-50'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'dark bg-[#0a0a0a] text-white' : 'bg-gradient-to-b from-blue-50 to-purple-50'}`}>
       <Navbar />
       
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-12">
@@ -290,7 +302,7 @@ const CodeHub = () => {
                     className={`w-full ${
                       isDarkMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90'
                     } text-white`}
-                    onClick={() => handleJoinRoom(room.id)}
+                    onClick={() => handleJoinRoom(room.id, room.name, room.language)}
                   >
                     Join Room
                   </Button>
@@ -343,6 +355,13 @@ const CodeHub = () => {
       </div>
 
       <CreateRoomDialog open={openCreateDialog} onOpenChange={setOpenCreateDialog} />
+      <JoinRoomDialog 
+        open={joinRoomDialog.open}
+        onOpenChange={(open) => setJoinRoomDialog(prev => ({ ...prev, open }))}
+        roomId={joinRoomDialog.roomId}
+        roomName={joinRoomDialog.roomName}
+        roomLanguage={joinRoomDialog.roomLanguage}
+      />
     </div>
   );
 };
