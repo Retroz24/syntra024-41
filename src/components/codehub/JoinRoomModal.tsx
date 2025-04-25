@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { QrCode, User, Link, MessageSquare } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface JoinRoomModalProps {
   isOpen: boolean;
@@ -16,6 +17,14 @@ interface JoinRoomModalProps {
   roomType: string;
   onJoin: (asGuest: boolean, username?: string) => void;
   onCreateCustom: (name: string) => void;
+}
+
+interface RoomData {
+  id: number;
+  name: string;
+  type: string;
+  category: string;
+  members: any[];
 }
 
 const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
@@ -33,14 +42,58 @@ const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
   const [isJoining, setIsJoining] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('join');
   
+  const [userProfile, setUserProfile] = useLocalStorage<any>('user-profile', { username: 'guest', displayName: 'Guest User', avatarUrl: '' });
+  const [roomsData, setRoomsData] = useLocalStorage<RoomData[]>('created-rooms', []);
+  
+  // Pre-fill username from profile if available
+  React.useEffect(() => {
+    if (userProfile && userProfile.username && userProfile.username !== 'guest') {
+      setUsername(userProfile.username);
+    }
+  }, [userProfile]);
+  
   // Generate a random room code
   const roomCode = React.useMemo(() => Math.random().toString(36).substr(2, 9).toUpperCase(), []);
   
   const handleJoinAsGuest = () => {
     setIsJoining(true);
+    
     setTimeout(() => {
-      onJoin(true);
+      // Create a room ID
+      const roomId = Math.floor(Math.random() * 10000);
+      
+      // Find if a room with this name exists
+      const existingRoom = roomsData.find(room => room.name === roomName);
+      
+      // Add user to existing room or create new one
+      if (existingRoom) {
+        // Add user to existing room
+        const updatedRooms = roomsData.map(room => {
+          if (room.name === roomName) {
+            return {
+              ...room,
+              members: [...room.members, { id: Date.now(), name: 'Guest', status: 'online' }]
+            };
+          }
+          return room;
+        });
+        setRoomsData(updatedRooms);
+        navigate(`/room/${existingRoom.id}`);
+      } else {
+        // Create new room with this user
+        const newRoom = {
+          id: roomId,
+          name: roomName,
+          type: roomType,
+          category: roomType,
+          members: [{ id: Date.now(), name: 'Guest', status: 'online' }]
+        };
+        setRoomsData([...roomsData, newRoom]);
+        navigate(`/room/${roomId}`);
+      }
+      
       setIsJoining(false);
+      onClose();
       toast({
         title: "Joined as guest",
         description: `You've joined ${roomName} as a guest`,
@@ -59,9 +112,60 @@ const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     }
     
     setIsJoining(true);
+    
     setTimeout(() => {
-      onJoin(false, username);
+      // Update user profile
+      if (!userProfile || userProfile.username === 'guest') {
+        setUserProfile({
+          ...userProfile,
+          username: username,
+          displayName: username
+        });
+      }
+      
+      // Create a room ID
+      const roomId = Math.floor(Math.random() * 10000);
+      
+      // Find if a room with this name exists
+      const existingRoom = roomsData.find(room => room.name === roomName);
+      
+      // Add user to existing room or create new one
+      if (existingRoom) {
+        // Add user to existing room
+        const updatedRooms = roomsData.map(room => {
+          if (room.name === roomName) {
+            return {
+              ...room,
+              members: [...room.members, { 
+                id: Date.now(), 
+                name: username, 
+                status: 'online' 
+              }]
+            };
+          }
+          return room;
+        });
+        setRoomsData(updatedRooms);
+        navigate(`/room/${existingRoom.id}`);
+      } else {
+        // Create new room with this user
+        const newRoom = {
+          id: roomId,
+          name: roomName,
+          type: roomType,
+          category: roomType,
+          members: [{ 
+            id: Date.now(), 
+            name: username, 
+            status: 'online' 
+          }]
+        };
+        setRoomsData([...roomsData, newRoom]);
+        navigate(`/room/${roomId}`);
+      }
+      
       setIsJoining(false);
+      onClose();
       toast({
         title: "Welcome aboard!",
         description: `You've joined ${roomName} as ${username}`,
@@ -80,9 +184,31 @@ const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     }
     
     setIsJoining(true);
+    
     setTimeout(() => {
-      onCreateCustom(customRoomName);
+      // Create a room ID
+      const roomId = Math.floor(Math.random() * 10000);
+      
+      // Create the new room
+      const newRoom = {
+        id: roomId,
+        name: customRoomName,
+        type: roomType,
+        category: roomType,
+        members: [{ 
+          id: Date.now(), 
+          name: userProfile.username !== 'guest' ? userProfile.username : 'DevUser', 
+          status: 'online',
+          isAdmin: true
+        }]
+      };
+      
+      // Add to rooms data
+      setRoomsData([...roomsData, newRoom]);
+      
+      navigate(`/room/${roomId}`);
       setIsJoining(false);
+      onClose();
       toast({
         title: "Room created!",
         description: `Your ${roomType} room "${customRoomName}" has been created`,

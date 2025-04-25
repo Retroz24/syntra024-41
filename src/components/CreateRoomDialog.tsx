@@ -23,10 +23,23 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Code, Database, Brain } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface CreateRoomDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+interface RoomData {
+  id: number;
+  name: string;
+  description: string;
+  type: string;
+  category: string;
+  maxMembers: number;
+  focusArea: string;
+  members: { id: number; name: string; status: string; isAdmin?: boolean }[];
+  resources: { title: string; url: string }[];
 }
 
 export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) {
@@ -36,8 +49,13 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
   const [roomDescription, setRoomDescription] = useState('');
   const [roomType, setRoomType] = useState('public');
   const [category, setCategory] = useState('programming');
+  const [programmingLanguage, setProgrammingLanguage] = useState('JavaScript');
   const [maxMembers, setMaxMembers] = useState('10');
+  const [focusArea, setFocusArea] = useState('code');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [createdRooms, setCreatedRooms] = useLocalStorage<RoomData[]>('created-rooms', []);
+  const [userProfile] = useLocalStorage<any>('user-profile', { username: 'DevUser', status: 'online' });
 
   const handleCreateRoom = () => {
     if (!roomName) {
@@ -51,11 +69,30 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
 
     setIsLoading(true);
     
-    // Simulate room creation
+    // Create a new room with the selected options
+    const roomId = Math.floor(Math.random() * 10000);
+    
+    const newRoom: RoomData = {
+      id: roomId,
+      name: roomName,
+      description: roomDescription,
+      type: roomType,
+      category: category === 'programming' ? programmingLanguage : category,
+      maxMembers: parseInt(maxMembers),
+      focusArea: focusArea,
+      members: [{
+        id: 1,
+        name: userProfile.username || 'DevUser',
+        status: 'online',
+        isAdmin: true
+      }],
+      resources: []
+    };
+    
+    // Save room to local storage
+    setCreatedRooms([...createdRooms, newRoom]);
+    
     setTimeout(() => {
-      // In a real app, this would make an API call to create the room
-      const roomId = Math.floor(Math.random() * 10000);
-      
       toast({
         title: "Room Created!",
         description: `Your room "${roomName}" has been created successfully.`
@@ -69,7 +106,9 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
       setRoomDescription('');
       setRoomType('public');
       setCategory('programming');
+      setProgrammingLanguage('JavaScript');
       setMaxMembers('10');
+      setFocusArea('code');
       
       // Navigate to the new room
       navigate(`/room/${roomId}`);
@@ -151,6 +190,30 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
             </Select>
           </div>
           
+          {category === 'programming' && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="language" className="text-right">
+                Language
+              </Label>
+              <Select
+                value={programmingLanguage}
+                onValueChange={setProgrammingLanguage}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="JavaScript">JavaScript</SelectItem>
+                  <SelectItem value="TypeScript">TypeScript</SelectItem>
+                  <SelectItem value="Python">Python</SelectItem>
+                  <SelectItem value="Java">Java</SelectItem>
+                  <SelectItem value="Go">Go</SelectItem>
+                  <SelectItem value="React">React</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="max-members" className="text-right">
               Max Members
@@ -177,7 +240,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
               Focus Area
             </Label>
             <div className="col-span-3">
-              <ToggleGroup type="single" defaultValue="code">
+              <ToggleGroup type="single" defaultValue={focusArea} value={focusArea} onValueChange={(val) => val && setFocusArea(val)}>
                 <ToggleGroupItem value="code" aria-label="Code">
                   <Code className="h-4 w-4 mr-2" />
                   Code

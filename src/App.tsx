@@ -8,22 +8,25 @@ import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 import CodeHub from '@/pages/CodeHub';
 import { DarkModeProvider } from '@/contexts/DarkModeContext';
+import { UserProvider } from '@/contexts/UserContext';
 import ChatRoom from '@/pages/ChatRoom';
 
 function App() {
   return (
     <DarkModeProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/ai-playground" element={<AiPlayground />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/codehub" element={<CodeHub />} />
-          <Route path="/room/:roomId" element={<ChatRoom />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </Router>
+      <UserProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/ai-playground" element={<AiPlayground />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/codehub" element={<CodeHub />} />
+            <Route path="/room/:roomId" element={<ChatRoom />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </Router>
+      </UserProvider>
     </DarkModeProvider>
   );
 }
