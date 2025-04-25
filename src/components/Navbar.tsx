@@ -9,12 +9,14 @@ const Navbar = () => {
         <div className="bg-white/70 backdrop-blur-md rounded-full shadow-lg border border-white/20">
           <div className="flex justify-between items-center h-14 px-6">
             <div className="flex items-center space-x-2">
-              <img 
-                src="/lovable-uploads/a0743b79-faca-44ef-b81c-9ac71f0333fc.png" 
-                alt="Syntra Logo" 
-                className="h-7 w-auto"
-              />
-              <span className="text-lg font-bold text-black">Syntra</span>
+              <Link to="/" className="flex items-center space-x-2">
+                <img 
+                  src="/lovable-uploads/a0743b79-faca-44ef-b81c-9ac71f0333fc.png" 
+                  alt="Syntra Logo" 
+                  className="h-7 w-auto"
+                />
+                <span className="text-lg font-bold text-black">Syntra</span>
+              </Link>
             </div>
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
