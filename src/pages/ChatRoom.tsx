@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -13,7 +12,15 @@ import { useDarkMode } from '@/contexts/DarkModeContext';
 import { MessageSquare, Users, Code, BookOpen, Plus, Send, Link, Upload, Palette } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-// Define room categories
+interface Message {
+  id: number;
+  userId: number;
+  text: string;
+  timestamp: string;
+  isFile?: boolean;
+  fileUrl?: string;
+}
+
 const roomCategories = {
   "react": {
     name: "React Hooks",
@@ -53,7 +60,6 @@ const roomCategories = {
   }
 };
 
-// Language options for code editor
 const languageOptions = [
   { value: 'javascript', label: 'JavaScript' },
   { value: 'typescript', label: 'TypeScript' },
@@ -67,7 +73,6 @@ const languageOptions = [
   { value: 'rust', label: 'Rust' },
 ];
 
-// Define available themes
 const chatThemes = [
   { name: 'Default', primaryColor: 'purple-500', secondaryColor: 'gray-100' },
   { name: 'Dark', primaryColor: 'gray-800', secondaryColor: 'gray-700' },
@@ -93,7 +98,6 @@ const ChatRoom = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useDarkMode();
   
-  // Get user profile from localStorage
   const [profileData] = useLocalStorage<UserProfile>("userProfile", {
     name: "",
     email: "",
@@ -106,7 +110,7 @@ const ChatRoom = () => {
   });
   
   const [message, setMessage] = React.useState('');
-  const [initialMessages, setInitialMessages] = React.useState([
+  const [initialMessages, setInitialMessages] = React.useState<Message[]>([
     { id: 1, userId: 2, text: 'Hey everyone! How\'s it going?', timestamp: '10:30 AM' },
     { id: 2, userId: 1, text: 'Welcome to the room! I just created this for us to discuss React hooks.', timestamp: '10:31 AM' },
     { id: 3, userId: 3, text: 'Great idea! I\'ve been struggling with useEffect dependencies.', timestamp: '10:33 AM' },
@@ -114,12 +118,11 @@ const ChatRoom = () => {
     { id: 5, userId: 1, text: 'Let\'s start with a simple example. Here\'s how I structure my useEffect calls:', timestamp: '10:36 AM' },
   ]);
   
-  const [messages, setMessages] = React.useState(initialMessages);
+  const [messages, setMessages] = React.useState<Message[]>(initialMessages);
   const [activeChannel, setActiveChannel] = React.useState('general');
   const [codeSnippet, setCodeSnippet] = React.useState('// Write your code here\nfunction example() {\n  console.log("Hello, world!");\n}\n');
   const [codeLanguage, setCodeLanguage] = React.useState('javascript');
   
-  // Get room category based on roomId
   const categoryId = roomId?.includes("951") ? "react" : 
                      roomId?.includes("js") ? "javascript" :
                      roomId?.includes("py") ? "python" : 
@@ -133,11 +136,9 @@ const ChatRoom = () => {
     { id: 1, name: 'Jessica Williams', message: 'I would like to join this study room to learn about React hooks.' }
   ]);
   
-  // Chat theme state
   const [currentTheme, setCurrentTheme] = React.useState(chatThemes[0]);
   const [showThemeSelector, setShowThemeSelector] = React.useState(false);
   
-  // Room members state with current user
   const [roomUsers, setRoomUsers] = React.useState([
     { id: 1, name: profileData.name || profileData.username, status: 'online', avatar: profileData.avatarUrl, isAdmin: true },
     { id: 2, name: 'Sarah Parker', status: 'online', avatar: null, isAdmin: false },
@@ -145,13 +146,9 @@ const ChatRoom = () => {
     { id: 4, name: 'Emily Davis', status: 'offline', avatar: null, isAdmin: false },
   ]);
   
-  // Update room title and other room-specific content based on category
   React.useEffect(() => {
-    // Update code language based on room category
     setCodeLanguage(roomCategory.language);
-    // Update resources based on room category
     setResources(roomCategory.resources);
-    // Update initial message to match room category
     setInitialMessages(prev => {
       const newMessages = [...prev];
       newMessages[1] = {
@@ -162,7 +159,6 @@ const ChatRoom = () => {
     });
   }, [roomId, roomCategory]);
   
-  // Include current user in members list when profile changes
   React.useEffect(() => {
     if (profileData) {
       setRoomUsers(prev => {
@@ -186,7 +182,7 @@ const ChatRoom = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      const newMessage = {
+      const newMessage: Message = {
         id: messages.length + 1,
         userId: 1,
         text: message,
@@ -231,7 +227,6 @@ const ChatRoom = () => {
   };
 
   const handleApproveRequest = (id: number) => {
-    // Add new user to room
     const newUser = pendingRequests.find(req => req.id === id);
     if (newUser) {
       setRoomUsers([...roomUsers, { 
@@ -242,7 +237,6 @@ const ChatRoom = () => {
         isAdmin: false 
       }]);
     }
-    // Remove request
     setPendingRequests(pendingRequests.filter(req => req.id !== id));
     toast({
       title: "Request approved",
@@ -261,7 +255,7 @@ const ChatRoom = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
           description: "Please select a file under 5MB",
@@ -272,8 +266,7 @@ const ChatRoom = () => {
       
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Send file as message
-        const newMessage = {
+        const newMessage: Message = {
           id: messages.length + 1,
           userId: 1,
           text: `[File: ${file.name}]`,
