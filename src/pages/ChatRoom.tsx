@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -9,30 +10,82 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { useDarkMode } from '@/contexts/DarkModeContext';
-import { MessageSquare, Users, Code, BookOpen, Plus, Send, Link } from 'lucide-react';
+import { MessageSquare, Users, Code, BookOpen, Plus, Send, Link, Upload, Palette } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-const roomUsers = [
-  { id: 1, name: 'Alex Johnson', status: 'online', avatar: null, isAdmin: true },
-  { id: 2, name: 'Sarah Parker', status: 'online', avatar: null, isAdmin: false },
-  { id: 3, name: 'Michael Lee', status: 'idle', avatar: null, isAdmin: false },
-  { id: 4, name: 'Emily Davis', status: 'offline', avatar: null, isAdmin: false },
+// Define room categories
+const roomCategories = {
+  "react": {
+    name: "React Hooks",
+    language: "javascript",
+    resources: [
+      { title: 'React Hooks Documentation', url: 'https://reactjs.org/docs/hooks-intro.html', votes: 12 },
+      { title: 'useEffect Complete Guide', url: 'https://overreacted.io/a-complete-guide-to-useeffect/', votes: 10 },
+      { title: 'Custom Hooks Patterns', url: 'https://www.example.com/custom-hooks', votes: 8 },
+    ]
+  },
+  "javascript": {
+    name: "JavaScript Fundamentals",
+    language: "javascript",
+    resources: [
+      { title: 'JavaScript MDN Documentation', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript', votes: 14 },
+      { title: 'JavaScript.info', url: 'https://javascript.info/', votes: 11 },
+      { title: 'Modern JavaScript Tutorial', url: 'https://www.javascripttutorial.net/', votes: 9 },
+    ]
+  },
+  "python": {
+    name: "Python Programming",
+    language: "python",
+    resources: [
+      { title: 'Python Documentation', url: 'https://docs.python.org/3/', votes: 15 },
+      { title: 'Real Python Tutorials', url: 'https://realpython.com/', votes: 13 },
+      { title: 'Python for Data Science', url: 'https://www.datacamp.com/courses/intro-to-python-for-data-science', votes: 10 },
+    ]
+  },
+  "java": {
+    name: "Java Development",
+    language: "java",
+    resources: [
+      { title: 'Java Documentation', url: 'https://docs.oracle.com/en/java/', votes: 11 },
+      { title: 'Java Tutorials', url: 'https://www.baeldung.com/', votes: 9 },
+      { title: 'Spring Framework', url: 'https://spring.io/guides', votes: 8 },
+    ]
+  }
+};
+
+// Language options for code editor
+const languageOptions = [
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'java', label: 'Java' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'php', label: 'PHP' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
 ];
 
-const initialMessages = [
-  { id: 1, userId: 2, text: 'Hey everyone! How\'s it going?', timestamp: '10:30 AM' },
-  { id: 2, userId: 1, text: 'Welcome to the room! I just created this for us to discuss React hooks.', timestamp: '10:31 AM' },
-  { id: 3, userId: 3, text: 'Great idea! I\'ve been struggling with useEffect dependencies.', timestamp: '10:33 AM' },
-  { id: 4, userId: 2, text: 'Yeah, I find the dependency array really tricky sometimes.', timestamp: '10:34 AM' },
-  { id: 5, userId: 1, text: 'Let\'s start with a simple example. Here\'s how I structure my useEffect calls:', timestamp: '10:36 AM' },
+// Define available themes
+const chatThemes = [
+  { name: 'Default', primaryColor: 'purple-500', secondaryColor: 'gray-100' },
+  { name: 'Dark', primaryColor: 'gray-800', secondaryColor: 'gray-700' },
+  { name: 'Blue', primaryColor: 'blue-500', secondaryColor: 'blue-100' },
+  { name: 'Green', primaryColor: 'green-500', secondaryColor: 'green-100' },
+  { name: 'Red', primaryColor: 'red-500', secondaryColor: 'red-100' },
 ];
 
-const studyResources = [
-  { title: 'React Hooks Documentation', url: 'https://reactjs.org/docs/hooks-intro.html', votes: 12 },
-  { title: 'useEffect Complete Guide', url: 'https://overreacted.io/a-complete-guide-to-useeffect/', votes: 10 },
-  { title: 'Custom Hooks Patterns', url: 'https://www.example.com/custom-hooks', votes: 8 },
-  { title: 'Performance Optimization with useMemo', url: 'https://www.example.com/usememo', votes: 7 },
-  { title: 'State Management Alternatives', url: 'https://www.example.com/state-management', votes: 5 },
-];
+interface UserProfile {
+  name: string;
+  email: string;
+  username: string;
+  avatarUrl: string;
+  preferences: {
+    aiSuggestions: boolean;
+    personalizedLearning: boolean;
+  };
+}
 
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -40,16 +93,89 @@ const ChatRoom = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useDarkMode();
   
+  // Get user profile from localStorage
+  const [profileData] = useLocalStorage<UserProfile>("userProfile", {
+    name: "",
+    email: "",
+    username: "DevUser",
+    avatarUrl: "",
+    preferences: {
+      aiSuggestions: true,
+      personalizedLearning: true,
+    }
+  });
+  
   const [message, setMessage] = React.useState('');
+  const [initialMessages, setInitialMessages] = React.useState([
+    { id: 1, userId: 2, text: 'Hey everyone! How\'s it going?', timestamp: '10:30 AM' },
+    { id: 2, userId: 1, text: 'Welcome to the room! I just created this for us to discuss React hooks.', timestamp: '10:31 AM' },
+    { id: 3, userId: 3, text: 'Great idea! I\'ve been struggling with useEffect dependencies.', timestamp: '10:33 AM' },
+    { id: 4, userId: 2, text: 'Yeah, I find the dependency array really tricky sometimes.', timestamp: '10:34 AM' },
+    { id: 5, userId: 1, text: 'Let\'s start with a simple example. Here\'s how I structure my useEffect calls:', timestamp: '10:36 AM' },
+  ]);
+  
   const [messages, setMessages] = React.useState(initialMessages);
   const [activeChannel, setActiveChannel] = React.useState('general');
   const [codeSnippet, setCodeSnippet] = React.useState('// Write your code here\nfunction example() {\n  console.log("Hello, world!");\n}\n');
   const [codeLanguage, setCodeLanguage] = React.useState('javascript');
-  const [resources, setResources] = React.useState(studyResources);
+  
+  // Get room category based on roomId
+  const categoryId = roomId?.includes("951") ? "react" : 
+                     roomId?.includes("js") ? "javascript" :
+                     roomId?.includes("py") ? "python" : 
+                     roomId?.includes("java") ? "java" : "react";
+  
+  const roomCategory = roomCategories[categoryId] || roomCategories.react;
+  
+  const [resources, setResources] = React.useState(roomCategory.resources);
   const [newResourceUrl, setNewResourceUrl] = React.useState('');
   const [pendingRequests, setPendingRequests] = React.useState([
     { id: 1, name: 'Jessica Williams', message: 'I would like to join this study room to learn about React hooks.' }
   ]);
+  
+  // Chat theme state
+  const [currentTheme, setCurrentTheme] = React.useState(chatThemes[0]);
+  const [showThemeSelector, setShowThemeSelector] = React.useState(false);
+  
+  // Room members state with current user
+  const [roomUsers, setRoomUsers] = React.useState([
+    { id: 1, name: profileData.name || profileData.username, status: 'online', avatar: profileData.avatarUrl, isAdmin: true },
+    { id: 2, name: 'Sarah Parker', status: 'online', avatar: null, isAdmin: false },
+    { id: 3, name: 'Michael Lee', status: 'idle', avatar: null, isAdmin: false },
+    { id: 4, name: 'Emily Davis', status: 'offline', avatar: null, isAdmin: false },
+  ]);
+  
+  // Update room title and other room-specific content based on category
+  React.useEffect(() => {
+    // Update code language based on room category
+    setCodeLanguage(roomCategory.language);
+    // Update resources based on room category
+    setResources(roomCategory.resources);
+    // Update initial message to match room category
+    setInitialMessages(prev => {
+      const newMessages = [...prev];
+      newMessages[1] = {
+        ...newMessages[1], 
+        text: `Welcome to the room! I just created this for us to discuss ${roomCategory.name}.`
+      };
+      return newMessages;
+    });
+  }, [roomId, roomCategory]);
+  
+  // Include current user in members list when profile changes
+  React.useEffect(() => {
+    if (profileData) {
+      setRoomUsers(prev => {
+        const newUsers = [...prev];
+        newUsers[0] = {
+          ...newUsers[0], 
+          name: profileData.name || profileData.username,
+          avatar: profileData.avatarUrl
+        };
+        return newUsers;
+      });
+    }
+  }, [profileData]);
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -105,6 +231,18 @@ const ChatRoom = () => {
   };
 
   const handleApproveRequest = (id: number) => {
+    // Add new user to room
+    const newUser = pendingRequests.find(req => req.id === id);
+    if (newUser) {
+      setRoomUsers([...roomUsers, { 
+        id: roomUsers.length + 1, 
+        name: newUser.name, 
+        status: 'online', 
+        avatar: null, 
+        isAdmin: false 
+      }]);
+    }
+    // Remove request
     setPendingRequests(pendingRequests.filter(req => req.id !== id));
     toast({
       title: "Request approved",
@@ -120,6 +258,35 @@ const ChatRoom = () => {
     });
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "Please select a file under 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Send file as message
+        const newMessage = {
+          id: messages.length + 1,
+          userId: 1,
+          text: `[File: ${file.name}]`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isFile: true,
+          fileUrl: reader.result as string
+        };
+        setMessages([...messages, newMessage]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-[#0a0a0a] text-white' : 'bg-gray-50'}`}>
       <Navbar />
@@ -129,7 +296,7 @@ const ChatRoom = () => {
           <div className={`w-full lg:w-64 h-auto lg:h-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow`}>
             <div className="p-4 border-b">
               <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                Room #{roomId} - React Hooks
+                Room #{roomId} - {roomCategory.name}
               </h3>
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 {roomUsers.length} members
@@ -268,7 +435,11 @@ const ChatRoom = () => {
                     <ScrollArea className="p-4 h-[calc(100vh-250px)]">
                       <div className="space-y-4">
                         {messages.map(msg => {
-                          const user = roomUsers.find(u => u.id === msg.userId);
+                          const user = roomUsers.find(u => u.id === msg.userId) || { 
+                            name: 'Unknown User', 
+                            avatar: null,
+                            isAdmin: false
+                          };
                           const isCurrentUser = msg.userId === 1;
                           
                           return (
@@ -280,9 +451,9 @@ const ChatRoom = () => {
                                 <div className="flex items-end gap-2">
                                   {!isCurrentUser && (
                                     <Avatar className="h-8 w-8">
-                                      <AvatarImage src={user?.avatar || undefined} />
+                                      <AvatarImage src={user.avatar || undefined} />
                                       <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
-                                        {user?.name.split(' ').map(n => n[0]).join('') || '?'}
+                                        {user.name.split(' ').map(n => n[0]).join('') || '?'}
                                       </AvatarFallback>
                                     </Avatar>
                                   )}
@@ -291,19 +462,24 @@ const ChatRoom = () => {
                                     className={`p-3 rounded-lg ${
                                       isCurrentUser 
                                         ? isDarkMode 
-                                          ? 'bg-purple-600 text-white' 
-                                          : 'bg-purple-500 text-white' 
+                                          ? `bg-${currentTheme.primaryColor} text-white` 
+                                          : `bg-${currentTheme.primaryColor} text-white` 
                                         : isDarkMode 
                                           ? 'bg-gray-800 text-white' 
-                                          : 'bg-gray-100 text-gray-800'
+                                          : `bg-${currentTheme.secondaryColor} text-gray-800`
                                     }`}
                                   >
                                     {!isCurrentUser && (
                                       <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                        {user?.name}
+                                        {user.name}
                                       </div>
                                     )}
                                     <p>{msg.text}</p>
+                                    {msg.isFile && (
+                                      <div className="mt-2">
+                                        <img src={msg.fileUrl} alt="Uploaded file" className="max-w-full rounded" />
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 
@@ -323,6 +499,42 @@ const ChatRoom = () => {
                     </ScrollArea>
                     
                     <div className={`p-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                      <div className="flex items-center mb-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-1 h-8 w-8"
+                          onClick={() => setShowThemeSelector(!showThemeSelector)}
+                        >
+                          <Palette className="h-4 w-4" />
+                        </Button>
+                        
+                        <label className="p-1 h-8 w-8 flex items-center justify-center cursor-pointer">
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                          />
+                          <Upload className="h-4 w-4" />
+                        </label>
+                        
+                        {showThemeSelector && (
+                          <div className="flex space-x-2 ml-2">
+                            {chatThemes.map((theme) => (
+                              <button
+                                key={theme.name}
+                                className={`w-6 h-6 rounded-full bg-${theme.primaryColor} border-2 ${
+                                  currentTheme.name === theme.name ? 'border-black dark:border-white' : 'border-transparent'
+                                }`}
+                                onClick={() => setCurrentTheme(theme)}
+                                title={theme.name}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
                       <form onSubmit={handleSendMessage} className="flex gap-2">
                         <Input
                           value={message}
@@ -357,13 +569,16 @@ const ChatRoom = () => {
                                 : 'bg-white border-gray-300'
                             }`}
                           >
-                            <option value="javascript">JavaScript</option>
-                            <option value="typescript">TypeScript</option>
-                            <option value="python">Python</option>
-                            <option value="java">Java</option>
-                            <option value="csharp">C#</option>
-                            <option value="cpp">C++</option>
+                            {languageOptions.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
+                          
+                          <Button variant="outline" size="sm">
+                            Format Code
+                          </Button>
                           
                           <Button variant="outline" size="sm">
                             Run Code
@@ -403,7 +618,7 @@ const ChatRoom = () => {
                 <div className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-b-lg shadow overflow-hidden`}>
                   <div className="p-4 border-b">
                     <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                      Study Resources
+                      Study Resources for {roomCategory.name}
                     </h3>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Share helpful links and resources with the room

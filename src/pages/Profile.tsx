@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProfileUpload from "@/components/ProfileUpload";
 import { useToast } from "@/hooks/use-toast";
@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const Profile = () => {
-  const [profileData, setProfileData] = useState({
+  const [profileData, setProfileData] = useLocalStorage("userProfile", {
     name: "",
     email: "",
     username: "DevUser",
@@ -20,10 +21,11 @@ const Profile = () => {
       personalizedLearning: true,
     }
   });
+  
   const { toast } = useToast();
 
   const handleProfileUpdate = () => {
-    // Here you would typically send the data to your backend
+    // Save to localStorage happens automatically via useLocalStorage hook
     toast({
       title: "Profile Updated",
       description: "Your changes have been saved successfully",
@@ -79,6 +81,16 @@ const Profile = () => {
                   value={profileData.email}
                   onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="Enter your email"
+                  className="dark:bg-gray-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={profileData.username}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder="Enter your username"
                   className="dark:bg-gray-700"
                 />
               </div>
