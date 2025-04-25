@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Home, Play, User } from 'lucide-react';
+import { Home, User } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -19,10 +19,6 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-1 text-gray-600 hover:text-gray-900">
               <Home className="w-5 h-5" />
               <span>Home</span>
-            </Link>
-            <Link to="/playground" className="flex items-center space-x-1 text-gray-600 hover:text-gray-900">
-              <Play className="w-5 h-5" />
-              <span>Playground</span>
             </Link>
             <Link to="/ai-playground" className="flex items-center space-x-1 text-gray-600 hover:text-gray-900">
               <span>AI Playground</span>
