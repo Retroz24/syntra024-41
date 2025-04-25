@@ -1,20 +1,20 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as React from 'react';
 
 type DarkModeContextType = {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
 };
 
-const DarkModeContext = createContext<DarkModeContextType>({
+const DarkModeContext = React.createContext<DarkModeContextType>({
   isDarkMode: false,
   toggleDarkMode: () => {},
 });
 
 export const DarkModeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = React.useState<boolean>(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Check for saved preference or system preference
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode) {
@@ -24,7 +24,7 @@ export const DarkModeProvider = ({ children }: { children: React.ReactNode }) =>
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Apply dark mode to the document
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -48,4 +48,4 @@ export const DarkModeProvider = ({ children }: { children: React.ReactNode }) =>
   );
 };
 
-export const useDarkMode = () => useContext(DarkModeContext);
+export const useDarkMode = () => React.useContext(DarkModeContext);
