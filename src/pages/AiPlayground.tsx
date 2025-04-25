@@ -2,8 +2,11 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import { useNavigate } from 'react-router-dom';
 
 const AiPlayground = () => {
+  const navigate = useNavigate();
+  
   const aiTools = [
     {
       title: "AI Roadmap Tracker for Teams",
@@ -48,7 +51,8 @@ const AiPlayground = () => {
         "🌀 Optional: Group voice feature"
       ],
       buttonText: "Join Room",
-      buttonColor: "bg-orange-500"
+      buttonColor: "bg-orange-500",
+      path: "/codehub"
     },
     {
       title: "AI Code Reviewer",
@@ -63,6 +67,12 @@ const AiPlayground = () => {
       buttonColor: "bg-indigo-500"
     }
   ];
+
+  const handleButtonClick = (path?: string) => {
+    if (path) {
+      navigate(path);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50">
@@ -106,6 +116,7 @@ const AiPlayground = () => {
 
                 <button
                   className={`w-full py-2 px-4 ${tool.buttonColor} text-white rounded-lg font-medium hover:opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group`}
+                  onClick={() => handleButtonClick(tool.path)}
                 >
                   {tool.buttonText}
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />

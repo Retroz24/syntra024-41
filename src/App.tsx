@@ -5,6 +5,7 @@ import Index from '@/pages/Index';
 import AiPlayground from '@/pages/AiPlayground';
 import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
+import CodeHub from '@/pages/CodeHub';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/ai-playground" element={<AiPlayground />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/codehub" element={<CodeHub />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
