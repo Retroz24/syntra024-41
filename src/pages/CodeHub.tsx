@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateRoomDialog } from '@/components/CreateRoomDialog';
+import { Users, MessageSquare, Code, Check, User, Bell } from 'lucide-react';
 
 // Import our new components
 import HeroSection from '@/components/codehub/HeroSection';
@@ -61,7 +62,7 @@ const aiData = [
 const notificationsData = [
   {
     id: "1",
-    type: "invite",
+    type: "invite" as const,
     title: "Room Invitation",
     message: "Alex invited you to join 'React Hooks Mastery'",
     time: "5m ago",
@@ -70,7 +71,7 @@ const notificationsData = [
   },
   {
     id: "2",
-    type: "activity",
+    type: "activity" as const,
     title: "Room Activity",
     message: "New message in 'TypeScript Types & Utilities'",
     time: "15m ago",
@@ -79,7 +80,7 @@ const notificationsData = [
   },
   {
     id: "3",
-    type: "admin",
+    type: "admin" as const,
     title: "Join Request",
     message: "Sarah wants to join your 'Python Algorithms' room",
     time: "30m ago",
@@ -88,7 +89,7 @@ const notificationsData = [
   },
   {
     id: "4",
-    type: "message",
+    type: "message" as const,
     title: "New Message",
     message: "Mike: Can anyone help with a React Router issue?",
     time: "1h ago",
