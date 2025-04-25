@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 const AiPlayground = () => {
   const aiTools = [
@@ -39,17 +40,18 @@ const AiPlayground = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 p-6 md:p-12">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50">
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
-          <span className="px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-            Featured AI Tools
+          <span className="px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-medium animate-fade-in">
+            AI Tools Suite
           </span>
-          <h1 className="text-4xl font-bold mt-6 mb-4 text-navy-900">
-            Explore Our AI Suite
+          <h1 className="text-4xl font-bold mt-6 mb-4 text-gray-900 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            Explore Our AI Playground
           </h1>
-          <p className="text-gray-600 text-lg">
-            Built to help you build, collaborate, and grow.
+          <p className="text-gray-600 text-lg animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            Discover powerful AI tools designed to enhance your workflow
           </p>
         </div>
 
@@ -57,8 +59,10 @@ const AiPlayground = () => {
           {aiTools.map((tool, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
+              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-fade-in"
+              style={{ animationDelay: `${0.2 * (index + 1)}s` }}
             >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 hover:opacity-10 rounded-xl transition-opacity duration-300" />
               <h3 className="text-xl font-semibold mb-3 text-gray-900">
                 {tool.title}
               </h3>
@@ -78,7 +82,7 @@ const AiPlayground = () => {
                   Coming Soon
                 </button>
               ) : (
-                <button className={`w-full py-2 px-4 ${tool.buttonColor} text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center group`}>
+                <button className={`w-full py-2 px-4 ${tool.buttonColor} text-white rounded-lg font-medium hover:opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group`}>
                   {tool.buttonText}
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
