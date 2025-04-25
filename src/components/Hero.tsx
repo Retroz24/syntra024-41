@@ -10,6 +10,7 @@ const Hero = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Check if mobile on mount and when window resizes
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -28,6 +29,7 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
+    // Skip effect on mobile
     if (isMobile) return;
     
     const handleMouseMove = (e: MouseEvent) => {
@@ -65,6 +67,7 @@ const Hero = () => {
   }, [isMobile]);
   
   useEffect(() => {
+    // Skip parallax on mobile
     if (isMobile) return;
     
     const handleScroll = () => {
@@ -89,7 +92,7 @@ const Hero = () => {
       style={{
         backgroundImage: 'url("/Header-background.webp")',
         backgroundPosition: 'center 30%', 
-        padding: isMobile ? '140px 12px 40px' : '220px 20px 40px'
+        padding: isMobile ? '100px 12px 40px' : '140px 20px 40px'
       }}
     >
       <div className="absolute -top-[10%] -right-[5%] w-1/2 h-[70%] bg-pulse-gradient opacity-20 blur-3xl rounded-full"></div>
@@ -98,7 +101,7 @@ const Hero = () => {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-12 items-center">
           <div className="w-full lg:w-1/2">
             <div 
-              className="pulse-chip mb-6 opacity-0 animate-fade-in" 
+              className="pulse-chip mb-3 sm:mb-6 opacity-0 animate-fade-in" 
               style={{ animationDelay: "0.1s" }}
             >
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-pulse-500 text-white mr-2">01</span>
@@ -106,15 +109,15 @@ const Hero = () => {
             </div>
             
             <h1 
-              className="section-title text-4xl sm:text-5xl lg:text-6xl xl:text-6xl leading-tight opacity-0 animate-fade-in mb-6" 
+              className="section-title text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight opacity-0 animate-fade-in" 
               style={{ animationDelay: "0.3s" }}
             >
-              Syntra: Where Mind<br className="hidden sm:inline" /> Meets Motion
+              Syntra: Where Mind<br className="hidden sm:inline" />Meets Motion
             </h1>
             
             <p 
               style={{ animationDelay: "0.5s" }} 
-              className="section-subtitle mt-0 mb-8 leading-relaxed opacity-0 animate-fade-in text-gray-950 font-normal text-lg text-left"
+              className="section-subtitle mt-3 sm:mt-6 mb-4 sm:mb-8 leading-relaxed opacity-0 animate-fade-in text-gray-950 font-normal text-base sm:text-lg text-left"
             >
               The humanoid companion that learns and adapts alongside you.
             </p>
