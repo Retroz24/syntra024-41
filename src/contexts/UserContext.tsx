@@ -3,6 +3,7 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export interface UserProfile {
+  id?: number;
   username: string;
   displayName: string;
   avatarUrl: string;
@@ -17,6 +18,7 @@ interface UserContextType {
 }
 
 const defaultProfile: UserProfile = {
+  id: 1, // Added default ID
   username: 'guest',
   displayName: 'Guest User',
   avatarUrl: '',

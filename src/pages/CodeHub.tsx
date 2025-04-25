@@ -6,9 +6,72 @@ import CategorySection from '@/components/codehub/CategorySection';
 import NotificationPanel from '@/components/codehub/NotificationPanel';
 import JoinByCodeDialog from '@/components/codehub/JoinByCodeDialog';
 import { useNavigate } from 'react-router-dom';
-import { techTopicsData, databaseData, aiData, notificationsData } from '@/pages/CodeHub';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/components/ui/use-toast';
+
+// Define the data outside of the component
+export const techTopicsData = [
+  { name: 'React', icon: '⚛️', description: 'Build interactive UIs' },
+  { name: 'JavaScript', icon: '📜', description: 'Programming language' },
+  { name: 'TypeScript', icon: '🔷', description: 'Typed JavaScript' },
+  { name: 'Python', icon: '🐍', description: 'General-purpose language' },
+  { name: 'Java', icon: '☕', description: 'Enterprise applications' },
+  { name: 'C#', icon: '#️⃣', description: '.NET development' },
+];
+
+export const databaseData = [
+  { name: 'MongoDB', icon: '🍃', description: 'NoSQL database' },
+  { name: 'PostgreSQL', icon: '🐘', description: 'Advanced SQL' },
+  { name: 'MySQL', icon: '🐬', description: 'Popular SQL database' },
+  { name: 'Redis', icon: '🔴', description: 'In-memory data store' },
+];
+
+export const aiData = [
+  { name: 'Machine Learning', icon: '🧠', description: 'Algorithms and statistical models' },
+  { name: 'Neural Networks', icon: '🕸️', description: 'Deep learning' },
+  { name: 'Natural Language Processing', icon: '💬', description: 'Text processing' },
+  { name: 'Computer Vision', icon: '👁️', description: 'Image recognition' },
+];
+
+export const notificationsData = [
+  { 
+    id: '1', 
+    type: 'invite', 
+    title: 'Room Invitation', 
+    message: 'You have been invited to join "Advanced React Patterns" study room',
+    time: '10m ago',
+    read: false,
+    actionable: true
+  },
+  { 
+    id: '2', 
+    type: 'activity', 
+    title: 'New Resource Added', 
+    message: 'A new resource was added to your "TypeScript Basics" room',
+    time: '1h ago',
+    read: false,
+    actionable: false
+  },
+  { 
+    id: '3', 
+    type: 'admin', 
+    title: 'Join Request', 
+    message: 'User alex_dev wants to join your "Python Algorithms" room',
+    time: '2h ago',
+    read: false,
+    actionable: true
+  },
+  { 
+    id: '4', 
+    type: 'message', 
+    title: 'New Message', 
+    message: 'Sarah left a message in "MongoDB Essentials" room',
+    time: '1d ago',
+    read: true,
+    actionable: false
+  },
+];
 
 // Define the CodeHub component
 const CodeHub = () => {
@@ -17,6 +80,7 @@ const CodeHub = () => {
   const [joinByCodeOpen, setJoinByCodeOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // State for managing notifications
   const [notifications, setNotifications] = useState(notificationsData);
@@ -166,12 +230,6 @@ const CodeHub = () => {
     </div>
   );
 };
-
-// Missing import for toast - let's add it
-import { useToast } from '@/components/ui/use-toast';
-
-// Export the data for reuse
-export { techTopicsData, databaseData, aiData, notificationsData };
 
 // Default export for the component
 export default CodeHub;
