@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -12,7 +11,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { MessageSquare, Users, Code, BookOpen, Plus, Send, Link } from 'lucide-react';
 
-// Mock data for users in the room
 const roomUsers = [
   { id: 1, name: 'Alex Johnson', status: 'online', avatar: null, isAdmin: true },
   { id: 2, name: 'Sarah Parker', status: 'online', avatar: null, isAdmin: false },
@@ -20,7 +18,6 @@ const roomUsers = [
   { id: 4, name: 'Emily Davis', status: 'offline', avatar: null, isAdmin: false },
 ];
 
-// Mock data for messages
 const initialMessages = [
   { id: 1, userId: 2, text: 'Hey everyone! How\'s it going?', timestamp: '10:30 AM' },
   { id: 2, userId: 1, text: 'Welcome to the room! I just created this for us to discuss React hooks.', timestamp: '10:31 AM' },
@@ -29,7 +26,6 @@ const initialMessages = [
   { id: 5, userId: 1, text: 'Let\'s start with a simple example. Here\'s how I structure my useEffect calls:', timestamp: '10:36 AM' },
 ];
 
-// Mock data for study resources
 const studyResources = [
   { title: 'React Hooks Documentation', url: 'https://reactjs.org/docs/hooks-intro.html', votes: 12 },
   { title: 'useEffect Complete Guide', url: 'https://overreacted.io/a-complete-guide-to-useeffect/', votes: 10 },
@@ -44,7 +40,6 @@ const ChatRoom = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useDarkMode();
   
-  // States
   const [message, setMessage] = React.useState('');
   const [messages, setMessages] = React.useState(initialMessages);
   const [activeChannel, setActiveChannel] = React.useState('general');
@@ -56,11 +51,9 @@ const ChatRoom = () => {
     { id: 1, name: 'Jessica Williams', message: 'I would like to join this study room to learn about React hooks.' }
   ]);
   
-  // Refs
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    // Scroll to bottom of messages
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -69,7 +62,7 @@ const ChatRoom = () => {
     if (message.trim()) {
       const newMessage = {
         id: messages.length + 1,
-        userId: 1, // Current user (admin)
+        userId: 1,
         text: message,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -133,7 +126,6 @@ const ChatRoom = () => {
       
       <div className="max-w-7xl mx-auto px-4 pt-20 pb-12">
         <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-120px)]">
-          {/* Left sidebar - User list */}
           <div className={`w-full lg:w-64 h-auto lg:h-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow`}>
             <div className="p-4 border-b">
               <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -194,7 +186,6 @@ const ChatRoom = () => {
               </ScrollArea>
             </div>
             
-            {/* Admin section - Join Requests */}
             <div className="p-4 border-t">
               <h4 className={`text-sm font-medium mb-2 flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 <span>Join Requests</span>
@@ -248,7 +239,6 @@ const ChatRoom = () => {
             </div>
           </div>
           
-          {/* Main content area - Tabbed interface */}
           <div className="flex-1 flex flex-col h-full">
             <Tabs defaultValue="general" value={activeChannel} onValueChange={setActiveChannel} className="flex flex-col h-full">
               <div className={`${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-t-lg shadow p-2`}>
@@ -272,7 +262,6 @@ const ChatRoom = () => {
                 </TabsList>
               </div>
               
-              {/* General Chat */}
               <TabsContent value="general" className="flex-1 flex flex-col h-full m-0">
                 <div className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-b-lg shadow overflow-hidden`}>
                   <div className="flex flex-col h-full">
@@ -350,7 +339,6 @@ const ChatRoom = () => {
                 </div>
               </TabsContent>
               
-              {/* Code Help */}
               <TabsContent value="code-help" className="flex-1 flex flex-col h-full m-0">
                 <div className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-b-lg shadow overflow-hidden`}>
                   <div className="flex flex-col h-full">
@@ -411,7 +399,6 @@ const ChatRoom = () => {
                 </div>
               </TabsContent>
               
-              {/* Study Resources */}
               <TabsContent value="study" className="flex-1 flex flex-col h-full m-0">
                 <div className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-b-lg shadow overflow-hidden`}>
                   <div className="p-4 border-b">
@@ -486,7 +473,6 @@ const ChatRoom = () => {
                 </div>
               </TabsContent>
               
-              {/* Upcoming */}
               <TabsContent value="upcoming" className="flex-1 flex flex-col h-full m-0">
                 <div className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-b-lg shadow overflow-hidden`}>
                   <div className="flex flex-col items-center justify-center h-full p-8 text-center">
