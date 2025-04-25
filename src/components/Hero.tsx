@@ -92,7 +92,7 @@ const Hero = () => {
       style={{
         backgroundImage: 'url("/Header-background.webp")',
         backgroundPosition: 'center 30%', 
-        padding: isMobile ? '60px 12px 40px' : '80px 20px 40px'
+        padding: isMobile ? '100px 12px 40px' : '140px 20px 40px'
       }}
     >
       <div className="absolute -top-[10%] -right-[5%] w-1/2 h-[70%] bg-pulse-gradient opacity-20 blur-3xl rounded-full"></div>
