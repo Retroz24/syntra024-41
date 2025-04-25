@@ -1,4 +1,3 @@
-
 // Import necessary components and hooks
 import React, { useState, useEffect } from 'react';
 import HeroSection from '@/components/codehub/HeroSection';
@@ -12,32 +11,32 @@ import { useToast } from '@/components/ui/use-toast';
 
 // Define the data outside of the component
 export const techTopicsData = [
-  { name: 'React', icon: '⚛️', description: 'Build interactive UIs' },
-  { name: 'JavaScript', icon: '📜', description: 'Programming language' },
-  { name: 'TypeScript', icon: '🔷', description: 'Typed JavaScript' },
-  { name: 'Python', icon: '🐍', description: 'General-purpose language' },
-  { name: 'Java', icon: '☕', description: 'Enterprise applications' },
-  { name: 'C#', icon: '#️⃣', description: '.NET development' },
+  { name: 'React', icon: '⚛️', description: 'Build interactive UIs', status: 'active', members: 42 },
+  { name: 'JavaScript', icon: '📜', description: 'Programming language', status: 'active', members: 78 },
+  { name: 'TypeScript', icon: '🔷', description: 'Typed JavaScript', status: 'active', members: 35 },
+  { name: 'Python', icon: '🐍', description: 'General-purpose language', status: 'busy', members: 91 },
+  { name: 'Java', icon: '☕', description: 'Enterprise applications', status: 'idle', members: 27 },
+  { name: 'C#', icon: '#️⃣', description: '.NET development', status: 'idle', members: 19 },
 ];
 
 export const databaseData = [
-  { name: 'MongoDB', icon: '🍃', description: 'NoSQL database' },
-  { name: 'PostgreSQL', icon: '🐘', description: 'Advanced SQL' },
-  { name: 'MySQL', icon: '🐬', description: 'Popular SQL database' },
-  { name: 'Redis', icon: '🔴', description: 'In-memory data store' },
+  { name: 'MongoDB', icon: '🍃', description: 'NoSQL database', status: 'active', members: 23 },
+  { name: 'PostgreSQL', icon: '🐘', description: 'Advanced SQL', status: 'busy', members: 31 },
+  { name: 'MySQL', icon: '🐬', description: 'Popular SQL database', status: 'active', members: 45 },
+  { name: 'Redis', icon: '🔴', description: 'In-memory data store', status: 'idle', members: 12 },
 ];
 
 export const aiData = [
-  { name: 'Machine Learning', icon: '🧠', description: 'Algorithms and statistical models' },
-  { name: 'Neural Networks', icon: '🕸️', description: 'Deep learning' },
-  { name: 'Natural Language Processing', icon: '💬', description: 'Text processing' },
-  { name: 'Computer Vision', icon: '👁️', description: 'Image recognition' },
+  { name: 'Machine Learning', icon: '🧠', description: 'Algorithms and statistical models', status: 'active', members: 56 },
+  { name: 'Neural Networks', icon: '🕸️', description: 'Deep learning', status: 'busy', members: 34 },
+  { name: 'Natural Language Processing', icon: '💬', description: 'Text processing', status: 'active', members: 48 },
+  { name: 'Computer Vision', icon: '👁️', description: 'Image recognition', status: 'idle', members: 29 },
 ];
 
 export const notificationsData = [
   { 
     id: '1', 
-    type: 'invite', 
+    type: 'invite' as const, 
     title: 'Room Invitation', 
     message: 'You have been invited to join "Advanced React Patterns" study room',
     time: '10m ago',
@@ -46,7 +45,7 @@ export const notificationsData = [
   },
   { 
     id: '2', 
-    type: 'activity', 
+    type: 'activity' as const, 
     title: 'New Resource Added', 
     message: 'A new resource was added to your "TypeScript Basics" room',
     time: '1h ago',
@@ -55,7 +54,7 @@ export const notificationsData = [
   },
   { 
     id: '3', 
-    type: 'admin', 
+    type: 'admin' as const, 
     title: 'Join Request', 
     message: 'User alex_dev wants to join your "Python Algorithms" room',
     time: '2h ago',
@@ -64,7 +63,7 @@ export const notificationsData = [
   },
   { 
     id: '4', 
-    type: 'message', 
+    type: 'message' as const, 
     title: 'New Message', 
     message: 'Sarah left a message in "MongoDB Essentials" room',
     time: '1d ago',
