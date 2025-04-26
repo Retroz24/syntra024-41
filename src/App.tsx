@@ -1,34 +1,29 @@
 
-import React from 'react';
+import { useState } from 'react';
+import './App.css';
+import Index from './pages/Index';
+import AiPlayground from './pages/AiPlayground';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import Index from '@/pages/Index';
-import AiPlayground from '@/pages/AiPlayground';
-import Profile from '@/pages/Profile';
-import NotFound from '@/pages/NotFound';
-import CodeHub from '@/pages/CodeHub';
-import { DarkModeProvider } from '@/contexts/DarkModeContext';
-import { UserProvider } from '@/contexts/UserContext';
-import ChatRoom from '@/pages/ChatRoom';
+import ChatRoom from './pages/ChatRoom';
+import CodeHub from './pages/CodeHub';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+import AvatarProfile from './pages/AvatarProfile';
 
-function App() {
+const App = () => {
   return (
-    <DarkModeProvider>
-      <UserProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/ai-playground" element={<AiPlayground />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/codehub" element={<CodeHub />} />
-            <Route path="/room/:roomId" element={<ChatRoom />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </Router>
-      </UserProvider>
-    </DarkModeProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/aiplayground" element={<AiPlayground />} />
+        <Route path="/chat" element={<ChatRoom />} />
+        <Route path="/codehub" element={<CodeHub />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/avatar" element={<AvatarProfile />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
