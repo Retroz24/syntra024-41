@@ -1,14 +1,15 @@
-
 // Import necessary components and hooks
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import HeroSection from '@/components/codehub/HeroSection';
 import CategorySection from '@/components/codehub/CategorySection';
 import NotificationPanel from '@/components/codehub/NotificationPanel';
 import JoinByCodeDialog from '@/components/codehub/JoinByCodeDialog';
+import CreateRoomDialog from '@/components/codehub/CreateRoomDialog';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { ModeToggle } from '@/components/ui/mode-toggle';
 
 // Define the data outside of the component
 export const techTopicsData = [
@@ -75,9 +76,10 @@ export const notificationsData = [
 
 // Define the CodeHub component
 const CodeHub = () => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { isDarkMode } = useDarkMode();
   const { userProfile } = useUser();
   const [joinByCodeOpen, setJoinByCodeOpen] = useState(false);
+  const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -117,8 +119,7 @@ const CodeHub = () => {
 
   // Handle room creation
   const handleCreateRoom = () => {
-    // This would open a create room dialog in a real implementation
-    navigate(`/room/${Math.floor(Math.random() * 10000)}`);
+    setCreateRoomOpen(true);
   };
 
   // Handle joining by code
@@ -167,19 +168,16 @@ const CodeHub = () => {
         {/* Header with toggle button */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">CodeHub</h1>
-          <button 
-            onClick={toggleDarkMode}
-            className={`px-4 py-2 rounded-md ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100 border border-gray-200'}`}
-          >
-            {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          </button>
+          <div className="flex items-center gap-4">
+            <ModeToggle />
+          </div>
         </div>
         
         {/* Hero section */}
         <HeroSection
           onSearch={handleSearch}
           onCreateRoom={handleCreateRoom}
-          onJoinByCode={handleJoinByCode}
+          onJoinByCode={() => setJoinByCodeOpen(true)}
           onRandomMatch={handleRandomMatch}
         />
         
@@ -226,6 +224,10 @@ const CodeHub = () => {
       <JoinByCodeDialog 
         open={joinByCodeOpen} 
         onOpenChange={setJoinByCodeOpen} 
+      />
+      <CreateRoomDialog
+        open={createRoomOpen}
+        onOpenChange={setCreateRoomOpen}
       />
     </div>
   );
