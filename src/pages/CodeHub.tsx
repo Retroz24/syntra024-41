@@ -1,4 +1,3 @@
-
 // Import necessary components and hooks
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
@@ -12,9 +11,11 @@ import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
-import { ModeToggle } from '@/components/ui/mode-toggle';
-import { Bell } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Bell } from 'lucide-react';
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { RoomJoinDialog } from "@/components/codehub/RoomJoinDialog";
+import { QrCode, Share } from "lucide-react";
 
 // Define expanded data outside of the component
 export const techTopicsData = [
@@ -61,7 +62,26 @@ export const dsaData = [
   { name: 'Sorting Algorithms', icon: '🔄', description: 'Element ordering', status: 'idle' as const, members: 0 },
 ];
 
-// Define the CodeHub component
+// Add new categories
+export const webDevData = [
+  { name: 'HTML', icon: '🌐', description: 'Web markup language', status: 'active' as const, members: 0 },
+  { name: 'CSS', icon: '🎨', description: 'Styling language', status: 'active' as const, members: 0 },
+  { name: 'JavaScript', icon: '📜', description: 'Web programming', status: 'active' as const, members: 0 },
+  { name: 'React', icon: '⚛️', description: 'UI library', status: 'active' as const, members: 0 },
+  { name: 'Vue', icon: '💚', description: 'Progressive framework', status: 'active' as const, members: 0 },
+  { name: 'Angular', icon: '🅰️', description: 'Full framework', status: 'active' as const, members: 0 },
+  { name: 'Node.js', icon: '💚', description: 'Runtime environment', status: 'active' as const, members: 0 },
+  { name: 'Express', icon: '🚂', description: 'Web framework', status: 'active' as const, members: 0 }
+];
+
+export const devopsData = [
+  { name: 'Docker', icon: '🐳', description: 'Containerization', status: 'active' as const, members: 0 },
+  { name: 'Kubernetes', icon: '⚙️', description: 'Container orchestration', status: 'active' as const, members: 0 },
+  { name: 'Jenkins', icon: '🤖', description: 'CI/CD', status: 'active' as const, members: 0 },
+  { name: 'AWS', icon: '☁️', description: 'Cloud platform', status: 'active' as const, members: 0 },
+  { name: 'Git', icon: '📚', description: 'Version control', status: 'active' as const, members: 0 }
+];
+
 const CodeHub = () => {
   const { isDarkMode } = useDarkMode();
   const { userProfile } = useUser();
@@ -74,6 +94,8 @@ const CodeHub = () => {
   // State for managing notifications
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<{ name: string; id: string; category: string } | null>(null);
+  const [joinRoomOpen, setJoinRoomOpen] = useState(false);
   
   // Handle notification actions
   const handleMarkRead = (id: string) => {
@@ -147,15 +169,20 @@ const CodeHub = () => {
     setSearchQuery(query);
   };
 
-  // Handle clicking on a category item
+  // Handle room selection and joining
   const handleItemClick = (item: { name: string }) => {
-    toast({
-      title: `Selected ${item.name}`,
-      description: `Joining room for ${item.name}`,
+    const roomId = Math.floor(Math.random() * 10000).toString();
+    setSelectedRoom({
+      name: item.name,
+      id: roomId,
+      category: item.name
     });
-    
-    const roomId = Math.floor(Math.random() * 10000);
-    navigate(`/chat?topic=${encodeURIComponent(item.name)}&roomId=${roomId}`);
+    setJoinRoomOpen(true);
+  };
+
+  // Generate invite link
+  const generateInviteLink = (roomId: string) => {
+    return `${window.location.origin}/join/${roomId}`;
   };
 
   // Filtered topics based on search query
@@ -179,26 +206,33 @@ const CodeHub = () => {
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+    const filteredWebDevTopics = webDevData.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const filteredDevopsTopics = devopsData.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Add Navbar */}
       <Navbar />
       
-      {/* Main container */}
       <div className="max-w-7xl mx-auto px-4 py-16">
-        {/* Header with toggle button */}
+        {/* Header with notifications and theme toggle */}
         <div className="flex justify-between items-center mb-6 mt-8">
           <h1 className="text-3xl font-bold">CodeHub</h1>
           <div className="flex items-center gap-4">
-            {/* Notification bell with popover */}
             <Popover open={notificationOpen} onOpenChange={setNotificationOpen}>
               <PopoverTrigger asChild>
-                <button className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                <Button variant="ghost" className="relative p-2">
                   <Bell className="w-5 h-5" />
                   {notifications.filter(n => !n.read).length > 0 && (
                     <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
                   )}
-                </button>
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0" align="end">
                 <NotificationPanel
@@ -210,10 +244,10 @@ const CodeHub = () => {
                 />
               </PopoverContent>
             </Popover>
-            <ModeToggle />
+            <ThemeToggle />
           </div>
         </div>
-        
+
         {/* Hero section */}
         <HeroSection
           onSearch={handleSearch}
@@ -221,14 +255,25 @@ const CodeHub = () => {
           onJoinByCode={() => setJoinByCodeOpen(true)}
           onRandomMatch={handleRandomMatch}
         />
-        
-        {/* Main content grid */}
+
+        {/* Category sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
           <div className="lg:col-span-2">
-            {/* Category sections */}
             <CategorySection
               title="Programming & Tech"
               items={filteredTechTopics}
+              onItemClick={handleItemClick}
+            />
+            
+            <CategorySection
+              title="Web Development"
+              items={filteredWebDevTopics}
+              onItemClick={handleItemClick}
+            />
+            
+            <CategorySection
+              title="DevOps & Tools"
+              items={filteredDevopsTopics}
               onItemClick={handleItemClick}
             />
             
@@ -254,12 +299,10 @@ const CodeHub = () => {
           {/* Sidebar content */}
           <div className="space-y-6">
             <MiniProfile username={userProfile.username !== 'guest' ? userProfile.username : undefined} />
-            
-            {/* Recent rooms could go here */}
           </div>
         </div>
       </div>
-      
+
       {/* Dialogs */}
       <JoinByCodeDialog 
         open={joinByCodeOpen} 
@@ -269,9 +312,17 @@ const CodeHub = () => {
         open={createRoomOpen}
         onOpenChange={setCreateRoomOpen}
       />
+      {selectedRoom && (
+        <RoomJoinDialog
+          open={joinRoomOpen}
+          onOpenChange={setJoinRoomOpen}
+          roomName={selectedRoom.name}
+          roomId={selectedRoom.id}
+          category={selectedRoom.category}
+        />
+      )}
     </div>
   );
 };
 
-// Default export for the component
 export default CodeHub;

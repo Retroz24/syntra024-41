@@ -1,10 +1,11 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Share, QrCode } from '@/components/ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,8 +18,17 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
   const [roomName, setRoomName] = React.useState('');
   const [maxMembers, setMaxMembers] = React.useState('10');
   const [isPrivate, setIsPrivate] = React.useState(false);
+  const [category, setCategory] = React.useState('programming');
+  const [description, setDescription] = React.useState('');
+  const [inviteCode, setInviteCode] = React.useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (open) {
+      setInviteCode(Math.random().toString(36).substring(7).toUpperCase());
+    }
+  }, [open]);
 
   const handleCreateRoom = () => {
     if (!roomName.trim()) {
@@ -30,16 +40,17 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
       return;
     }
 
-    // Generate a unique room ID
     const roomId = Math.floor(Math.random() * 10000);
     
-    // Store the room data in localStorage to persist between page loads
     const existingRooms = JSON.parse(localStorage.getItem('created-rooms') || '[]');
     const newRoom = {
       id: roomId,
       name: roomName,
+      description,
       maxMembers: parseInt(maxMembers),
+      category,
       type: isPrivate ? 'private' : 'public',
+      inviteCode,
       members: [{
         id: 1,
         name: 'You',
@@ -51,12 +62,13 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
     
     localStorage.setItem('created-rooms', JSON.stringify([...existingRooms, newRoom]));
     
-    // Navigate to the new room with the necessary state information
-    navigate(`/room/${roomId}`, {
+    navigate(`/chat?roomId=${roomId}`, {
       state: {
         roomName,
+        category,
         maxMembers: parseInt(maxMembers),
-        isPrivate
+        isPrivate,
+        isAdmin: true
       }
     });
     
@@ -79,6 +91,34 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
               placeholder="Enter room name"
             />
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of the room"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="programming">Programming & Tech</SelectItem>
+                <SelectItem value="webdev">Web Development</SelectItem>
+                <SelectItem value="devops">DevOps & Tools</SelectItem>
+                <SelectItem value="database">Databases</SelectItem>
+                <SelectItem value="ai">AI & ML</SelectItem>
+                <SelectItem value="dsa">DSA</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="maxMembers">Maximum Members</Label>
             <Input
@@ -90,6 +130,7 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
               onChange={(e) => setMaxMembers(e.target.value)}
             />
           </div>
+
           <div className="flex items-center justify-between">
             <Label htmlFor="isPrivate">Private Room</Label>
             <Switch
@@ -98,6 +139,32 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
               onCheckedChange={setIsPrivate}
             />
           </div>
+
+          <div className="space-y-2 pt-4 border-t">
+            <Label>Room Invite Code</Label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-muted p-2 rounded text-sm font-mono">
+                {inviteCode}
+              </code>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(inviteCode);
+                  toast({
+                    title: "Copied!",
+                    description: "Invite code copied to clipboard",
+                  });
+                }}
+              >
+                <Share className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline">
+                <QrCode className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
           <Button onClick={handleCreateRoom} className="w-full">
             Create Room
           </Button>
