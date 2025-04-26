@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera, Image, Upload } from "lucide-react";
@@ -265,7 +264,6 @@ const avatars: Avatar[] = [
     },
 ];
 
-// Add these animation variants at the top level
 const mainAvatarVariants = {
     initial: {
         y: 20,
@@ -352,7 +350,7 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
     const [uploadingImage, setUploadingImage] = useState(false);
 
     const handleAvatarSelect = (avatar: Avatar) => {
-        setRotationCount((prev) => prev + 1080); // Add 3 rotations each time
+        setRotationCount((prev) => prev + 1080);
         setSelectedAvatar(avatar);
         setCustomImage(null);
     };
@@ -385,7 +383,6 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
         <motion.div initial="initial" animate="animate" className="w-full">
             <Card className="w-full max-w-md mx-auto overflow-hidden bg-gradient-to-b from-background to-muted/30">
                 <CardContent className="p-0">
-                    {/* Background header */}
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{
@@ -403,7 +400,6 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
                     />
 
                     <div className="px-8 pb-8 -mt-16">
-                        {/* Main avatar display */}
                         <motion.div
                             className="relative w-40 h-40 mx-auto rounded-full overflow-hidden border-4 bg-background flex items-center justify-center"
                             variants={mainAvatarVariants}
@@ -423,7 +419,7 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
                                     }}
                                     transition={{
                                         duration: 0.8,
-                                        ease: [0.4, 0, 0.2, 1], // Custom easing for a nice acceleration and deceleration
+                                        ease: [0.4, 0, 0.2, 1],
                                     }}
                                 >
                                     {selectedAvatar.svg}
@@ -431,7 +427,6 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
                             )}
                         </motion.div>
 
-                        {/* Username display */}
                         <motion.div
                             className="text-center mt-4"
                             variants={pickerVariants.item}
@@ -454,7 +449,6 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
                             </motion.p>
                         </motion.div>
 
-                        {/* Avatar selection */}
                         <motion.div
                             className="mt-6"
                             variants={pickerVariants.container}
@@ -502,7 +496,6 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
                                         )}
                                     </motion.button>
                                 ))}
-                                {/* Upload custom image button */}
                                 <motion.div
                                     className="relative w-12 h-12"
                                     variants={pickerVariants.item}
@@ -544,7 +537,6 @@ export function AvatarPicker({ username = "Me", onSaveAvatar }: AvatarPickerProp
                             </motion.div>
                         </motion.div>
                         
-                        {/* Save button */}
                         {onSaveAvatar && (
                             <motion.div 
                                 className="mt-8 flex justify-center"
