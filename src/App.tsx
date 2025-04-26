@@ -17,6 +17,7 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/ai-playground" element={<AiPlayground />} />
           <Route path="/aiplayground" element={<AiPlayground />} />
           <Route path="/chat" element={<ChatRoom />} />
           <Route path="/codehub" element={<CodeHub />} />

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
@@ -12,7 +11,6 @@ const Hero = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Check if mobile on mount and when window resizes
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -24,12 +22,10 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
-    // Removed the fetch for Lottie animation as it's causing errors
-    // Using the fallback image instead
+    return () => {};
   }, []);
 
   useEffect(() => {
-    // Skip effect on mobile
     if (isMobile) return;
     
     const handleMouseMove = (e: MouseEvent) => {
@@ -67,7 +63,6 @@ const Hero = () => {
   }, [isMobile]);
   
   useEffect(() => {
-    // Skip parallax on mobile
     if (isMobile) return;
     
     const handleScroll = () => {
