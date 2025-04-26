@@ -1,13 +1,15 @@
 
-import React from "react";
+import React from 'react';
 
-interface AvatarType {
+// Define the Avatar interface
+export interface Avatar {
   id: number;
   svg: React.ReactNode;
   alt: string;
 }
 
-export const avatars: AvatarType[] = [
+// Export the avatars array to be used in other components
+export const avatars: Avatar[] = [
   {
     id: 1,
     svg: (
@@ -16,8 +18,8 @@ export const avatars: AvatarType[] = [
         fill="none"
         role="img"
         xmlns="http://www.w3.org/2000/svg"
-        width="40"
-        height="40"
+        width="100%"
+        height="100%"
         aria-label="Avatar 1"
       >
         <mask
@@ -80,8 +82,8 @@ export const avatars: AvatarType[] = [
         fill="none"
         role="img"
         xmlns="http://www.w3.org/2000/svg"
-        width="40"
-        height="40"
+        width="100%"
+        height="100%"
       >
         <mask
           id="avatar2mask"
@@ -143,8 +145,8 @@ export const avatars: AvatarType[] = [
         fill="none"
         role="img"
         xmlns="http://www.w3.org/2000/svg"
-        width="40"
-        height="40"
+        width="100%"
+        height="100%"
       >
         <mask
           id="avatar3mask"
@@ -201,8 +203,8 @@ export const avatars: AvatarType[] = [
         fill="none"
         role="img"
         xmlns="http://www.w3.org/2000/svg"
-        width="40"
-        height="40"
+        width="100%"
+        height="100%"
       >
         <mask
           id="avatar4mask"

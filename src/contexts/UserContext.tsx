@@ -9,6 +9,8 @@ export interface UserProfile {
   avatarUrl: string;
   status: 'online' | 'idle' | 'offline';
   joinedRooms: number[];
+  avatarId?: number | null;
+  customImage?: string | null;
 }
 
 interface UserContextType {
@@ -18,12 +20,14 @@ interface UserContextType {
 }
 
 const defaultProfile: UserProfile = {
-  id: 1, // Added default ID
+  id: 1, 
   username: 'guest',
   displayName: 'Guest User',
   avatarUrl: '',
   status: 'online',
   joinedRooms: [],
+  avatarId: null,
+  customImage: null
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
