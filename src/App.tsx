@@ -10,6 +10,7 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import AvatarProfile from './pages/AvatarProfile';
 import { UserProvider } from './contexts/UserContext';
+import { Toaster } from '@/components/ui/toaster';
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
           <Route path="/avatar" element={<AvatarProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Toaster />
       </Router>
     </UserProvider>
   );

@@ -46,7 +46,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   };
 
   return (
-    <Card className={`w-full h-full flex flex-col ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white'}`}>
+    <div className="w-full overflow-hidden">
       <div className="p-4 border-b flex justify-between items-center">
         <div className="flex items-center gap-2">
           <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notifications</h3>
@@ -64,7 +64,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
         )}
       </div>
       
-      <ScrollArea className="flex-grow">
+      <ScrollArea className="h-[300px]">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
             <Bell className={`w-12 h-12 mb-4 ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`} />
@@ -138,7 +138,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
           </div>
         )}
       </ScrollArea>
-    </Card>
+    </div>
   );
 };
 

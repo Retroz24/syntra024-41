@@ -1,5 +1,6 @@
 // Import necessary components and hooks
 import React, { useState } from 'react';
+import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/codehub/HeroSection';
 import CategorySection from '@/components/codehub/CategorySection';
 import NotificationPanel from '@/components/codehub/NotificationPanel';
@@ -10,6 +11,8 @@ import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { ModeToggle } from '@/components/ui/mode-toggle';
+import { Bell } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Define the data outside of the component
 export const techTopicsData = [
@@ -86,6 +89,7 @@ const CodeHub = () => {
   
   // State for managing notifications
   const [notifications, setNotifications] = useState(notificationsData);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   
   // Handle notification actions
   const handleMarkRead = (id: string) => {
@@ -95,7 +99,6 @@ const CodeHub = () => {
   };
   
   const handleAccept = (id: string) => {
-    // Handle accepting requests (e.g., room invite, join request)
     toast({
       title: "Request accepted",
       description: "You've accepted the request",
@@ -104,12 +107,10 @@ const CodeHub = () => {
   };
   
   const handleDecline = (id: string) => {
-    // Handle declining requests
     toast({
       title: "Request declined",
       description: "You've declined the request",
     });
-    // Remove the notification
     setNotifications(prev => prev.filter(item => item.id !== id));
   };
   
@@ -141,8 +142,14 @@ const CodeHub = () => {
 
   // Handle clicking on a category item
   const handleItemClick = (item: { name: string }) => {
+    console.log(`Clicked on ${item.name}`);
+    toast({
+      title: `Selected ${item.name}`,
+      description: `Joining room for ${item.name}`,
+    });
+    
     const roomId = Math.floor(Math.random() * 10000);
-    navigate(`/room/${roomId}?topic=${encodeURIComponent(item.name)}`);
+    navigate(`/chat?topic=${encodeURIComponent(item.name)}&roomId=${roomId}`);
   };
 
   // Filtered topics based on search query
@@ -163,12 +170,35 @@ const CodeHub = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      {/* Add Navbar */}
+      <Navbar />
+      
       {/* Main container */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-16">
         {/* Header with toggle button */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 mt-8">
           <h1 className="text-3xl font-bold">CodeHub</h1>
           <div className="flex items-center gap-4">
+            {/* Notification bell with popover */}
+            <Popover open={notificationOpen} onOpenChange={setNotificationOpen}>
+              <PopoverTrigger asChild>
+                <button className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                  <Bell className="w-5 h-5" />
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <NotificationPanel
+                  notifications={notifications}
+                  onMarkRead={handleMarkRead}
+                  onAccept={handleAccept}
+                  onDecline={handleDecline}
+                  onClearAll={handleClearAll}
+                />
+              </PopoverContent>
+            </Popover>
             <ModeToggle />
           </div>
         </div>
@@ -201,20 +231,6 @@ const CodeHub = () => {
               title="AI & Machine Learning"
               items={filteredAiTopics}
               onItemClick={handleItemClick}
-            />
-          </div>
-          
-          {/* Side panel */}
-          <div className="space-y-6">
-            {/* User profile summary component would go here */}
-            
-            {/* Notifications */}
-            <NotificationPanel 
-              notifications={notifications}
-              onMarkRead={handleMarkRead}
-              onAccept={handleAccept}
-              onDecline={handleDecline}
-              onClearAll={handleClearAll}
             />
           </div>
         </div>
