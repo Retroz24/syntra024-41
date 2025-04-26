@@ -30,7 +30,28 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
       return;
     }
 
+    // Generate a unique room ID
     const roomId = Math.floor(Math.random() * 10000);
+    
+    // Store the room data in localStorage to persist between page loads
+    const existingRooms = JSON.parse(localStorage.getItem('created-rooms') || '[]');
+    const newRoom = {
+      id: roomId,
+      name: roomName,
+      maxMembers: parseInt(maxMembers),
+      type: isPrivate ? 'private' : 'public',
+      members: [{
+        id: 1,
+        name: 'You',
+        status: 'online',
+        isAdmin: true
+      }],
+      createdAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('created-rooms', JSON.stringify([...existingRooms, newRoom]));
+    
+    // Navigate to the new room with the necessary state information
     navigate(`/room/${roomId}`, {
       state: {
         roomName,
@@ -38,6 +59,7 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
         isPrivate
       }
     });
+    
     onOpenChange(false);
   };
 

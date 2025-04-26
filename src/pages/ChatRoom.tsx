@@ -1,5 +1,6 @@
+
 import * as React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -92,11 +93,23 @@ interface UserProfile {
   };
 }
 
+interface RoomState {
+  roomName: string;
+  category?: string;
+  language?: string;
+  maxMembers?: number;
+  isPrivate?: boolean;
+  members?: any[];
+}
+
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDarkMode } = useDarkMode();
+  
+  const roomState = location.state as RoomState | undefined;
   
   const [profileData] = useLocalStorage<UserProfile>("userProfile", {
     name: "",
@@ -110,68 +123,105 @@ const ChatRoom = () => {
   });
   
   const [message, setMessage] = React.useState('');
-  const [initialMessages, setInitialMessages] = React.useState<Message[]>([
-    { id: 1, userId: 2, text: 'Hey everyone! How\'s it going?', timestamp: '10:30 AM' },
-    { id: 2, userId: 1, text: 'Welcome to the room! I just created this for us to discuss React hooks.', timestamp: '10:31 AM' },
-    { id: 3, userId: 3, text: 'Great idea! I\'ve been struggling with useEffect dependencies.', timestamp: '10:33 AM' },
-    { id: 4, userId: 2, text: 'Yeah, I find the dependency array really tricky sometimes.', timestamp: '10:34 AM' },
-    { id: 5, userId: 1, text: 'Let\'s start with a simple example. Here\'s how I structure my useEffect calls:', timestamp: '10:36 AM' },
-  ]);
-  
-  const [messages, setMessages] = React.useState<Message[]>(initialMessages);
+  const [messages, setMessages] = React.useState<Message[]>([]);
   const [activeChannel, setActiveChannel] = React.useState('general');
   const [codeSnippet, setCodeSnippet] = React.useState('// Write your code here\nfunction example() {\n  console.log("Hello, world!");\n}\n');
   const [codeLanguage, setCodeLanguage] = React.useState('javascript');
   
-  const categoryId = roomId?.includes("951") ? "react" : 
-                     roomId?.includes("js") ? "javascript" :
-                     roomId?.includes("py") ? "python" : 
-                     roomId?.includes("java") ? "java" : "react";
+  const [createdRooms, setCreatedRooms] = useLocalStorage<any[]>('created-rooms', []);
   
-  const roomCategory = roomCategories[categoryId] || roomCategories.react;
+  // Find the current room data
+  const currentRoom = React.useMemo(() => {
+    if (!roomId) return null;
+    return createdRooms.find(room => room.id.toString() === roomId.toString());
+  }, [roomId, createdRooms]);
   
-  const [resources, setResources] = React.useState(roomCategory.resources);
+  // Determine room category based on room data
+  const roomCategory = React.useMemo(() => {
+    // If we have room data from state or local storage, use it
+    if (roomState?.category) {
+      return roomCategories[roomState.category as keyof typeof roomCategories] || 
+             { name: roomState.roomName, language: roomState.language || "javascript", resources: [] };
+    }
+    
+    if (currentRoom?.category) {
+      return roomCategories[currentRoom.category as keyof typeof roomCategories] || 
+             { name: currentRoom.name, language: currentRoom.language || "javascript", resources: [] };
+    }
+    
+    // Fallback to a generic room if we can't find matching data
+    return { 
+      name: roomState?.roomName || currentRoom?.name || "Study Room", 
+      language: roomState?.language || currentRoom?.language || "javascript",
+      resources: []
+    };
+  }, [roomState, currentRoom]);
+  
+  const [resources, setResources] = React.useState<{title: string, url: string, votes: number}[]>([]);
   const [newResourceUrl, setNewResourceUrl] = React.useState('');
-  const [pendingRequests, setPendingRequests] = React.useState([
-    { id: 1, name: 'Jessica Williams', message: 'I would like to join this study room to learn about React hooks.' }
-  ]);
+  const [pendingRequests, setPendingRequests] = React.useState([]);
   
   const [currentTheme, setCurrentTheme] = React.useState(chatThemes[0]);
   const [showThemeSelector, setShowThemeSelector] = React.useState(false);
   
-  const [roomUsers, setRoomUsers] = React.useState([
-    { id: 1, name: profileData.name || profileData.username, status: 'online', avatar: profileData.avatarUrl, isAdmin: true },
-    { id: 2, name: 'Sarah Parker', status: 'online', avatar: null, isAdmin: false },
-    { id: 3, name: 'Michael Lee', status: 'idle', avatar: null, isAdmin: false },
-    { id: 4, name: 'Emily Davis', status: 'offline', avatar: null, isAdmin: false },
-  ]);
+  // Initialize room users based on creator and current user
+  const [roomUsers, setRoomUsers] = React.useState<{id: number, name: string, status: string, avatar: string | null, isAdmin: boolean}[]>([]);
   
+  // Initialize messages and room data on first load
   React.useEffect(() => {
-    setCodeLanguage(roomCategory.language);
-    setResources(roomCategory.resources);
-    setInitialMessages(prev => {
-      const newMessages = [...prev];
-      newMessages[1] = {
-        ...newMessages[1], 
-        text: `Welcome to the room! I just created this for us to discuss ${roomCategory.name}.`
-      };
-      return newMessages;
-    });
-  }, [roomId, roomCategory]);
-  
-  React.useEffect(() => {
-    if (profileData) {
-      setRoomUsers(prev => {
-        const newUsers = [...prev];
-        newUsers[0] = {
-          ...newUsers[0], 
-          name: profileData.name || profileData.username,
-          avatar: profileData.avatarUrl
-        };
-        return newUsers;
+    if (roomId) {
+      // Initialize room resources from the category if available, otherwise use an empty array
+      const categoryResources = roomCategory?.resources || [];
+      setResources(categoryResources);
+      
+      // Find the current room data
+      const room = createdRooms.find(r => r.id.toString() === roomId.toString());
+      
+      // Initialize room users
+      const initialUsers = [];
+      
+      // Add the current user as first member
+      initialUsers.push({
+        id: 1,
+        name: profileData.name || profileData.username || "You",
+        status: 'online',
+        avatar: profileData.avatarUrl,
+        isAdmin: room?.members?.[0]?.isAdmin || true
       });
+      
+      // Add other members if they exist
+      if (room?.members?.length > 1) {
+        room.members.slice(1).forEach((member, index) => {
+          initialUsers.push({
+            id: index + 2,
+            name: member.name,
+            status: member.status || 'online',
+            avatar: null,
+            isAdmin: member.isAdmin || false
+          });
+        });
+      }
+      
+      setRoomUsers(initialUsers);
+      
+      // Initialize messages
+      const welcomeMessage = {
+        id: 1,
+        userId: 1,
+        text: `Welcome to ${room?.name || roomCategory.name || "the room"}! This is a new conversation.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      setMessages([welcomeMessage]);
     }
-  }, [profileData]);
+  }, [roomId, roomCategory, createdRooms, profileData]);
+  
+  // Set code language based on room category
+  React.useEffect(() => {
+    if (roomCategory?.language) {
+      setCodeLanguage(roomCategory.language);
+    }
+  }, [roomCategory]);
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -227,16 +277,6 @@ const ChatRoom = () => {
   };
 
   const handleApproveRequest = (id: number) => {
-    const newUser = pendingRequests.find(req => req.id === id);
-    if (newUser) {
-      setRoomUsers([...roomUsers, { 
-        id: roomUsers.length + 1, 
-        name: newUser.name, 
-        status: 'online', 
-        avatar: null, 
-        isAdmin: false 
-      }]);
-    }
     setPendingRequests(pendingRequests.filter(req => req.id !== id));
     toast({
       title: "Request approved",
@@ -280,6 +320,9 @@ const ChatRoom = () => {
     }
   };
 
+  // Get room name to display
+  const displayRoomName = roomState?.roomName || currentRoom?.name || roomCategory?.name || `Room #${roomId}`;
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-[#0a0a0a] text-white' : 'bg-gray-50'}`}>
       <Navbar />
@@ -289,7 +332,7 @@ const ChatRoom = () => {
           <div className={`w-full lg:w-64 h-auto lg:h-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow`}>
             <div className="p-4 border-b">
               <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                Room #{roomId} - {roomCategory.name}
+                {displayRoomName}
               </h3>
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 {roomUsers.length} members
@@ -362,7 +405,7 @@ const ChatRoom = () => {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {pendingRequests.map(request => (
+                  {pendingRequests.map((request: any) => (
                     <div 
                       key={request.id}
                       className={`p-2 rounded-md ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
@@ -611,7 +654,7 @@ const ChatRoom = () => {
                 <div className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-b-lg shadow overflow-hidden`}>
                   <div className="p-4 border-b">
                     <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                      Study Resources for {roomCategory.name}
+                      Study Resources for {displayRoomName}
                     </h3>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Share helpful links and resources with the room
