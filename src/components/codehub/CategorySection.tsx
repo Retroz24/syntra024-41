@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDarkMode } from '@/contexts/DarkModeContext';
+import { useEffect } from 'react';
 
 interface CategoryItem {
   name: string;
@@ -20,6 +21,51 @@ interface CategorySectionProps {
 
 const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemClick }) => {
   const { isDarkMode } = useDarkMode();
+  
+  // Get member counts from local storage
+  useEffect(() => {
+    const updateMemberCounts = () => {
+      const createdRooms = JSON.parse(localStorage.getItem('created-rooms') || '[]');
+      const joinedRooms = JSON.parse(localStorage.getItem('joined-rooms') || '[]');
+      
+      // Combine created and joined rooms to get all active rooms
+      const allRooms = [...createdRooms, ...joinedRooms];
+      
+      // Update member counts for each item based on room data
+      items.forEach(item => {
+        const matchingRooms = allRooms.filter(room => 
+          room.name.toLowerCase() === item.name.toLowerCase() || 
+          room.category.toLowerCase() === item.name.toLowerCase()
+        );
+        
+        if (matchingRooms.length > 0) {
+          // Sum up all members in matching rooms
+          const totalMembers = matchingRooms.reduce((sum, room) => 
+            sum + (room.members ? room.members.length : 0), 0);
+          
+          item.members = totalMembers;
+          
+          // Update status based on member activity
+          if (totalMembers > 5) {
+            item.status = 'busy';
+          } else if (totalMembers > 0) {
+            item.status = 'active';
+          } else {
+            item.status = 'idle';
+          }
+        }
+      });
+    };
+    
+    updateMemberCounts();
+    
+    // Add event listener for storage changes to update counts in real-time
+    window.addEventListener('storage', updateMemberCounts);
+    
+    return () => {
+      window.removeEventListener('storage', updateMemberCounts);
+    };
+  }, [items]);
   
   const getStatusColor = (status: 'busy' | 'active' | 'idle') => {
     switch (status) {
@@ -45,7 +91,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
           <Card 
             key={index}
             onClick={() => onItemClick(item)}
-            className={`transition-all duration-300 cursor-pointer hover:shadow-md transform hover:-translate-y-1 ${
+            className={`transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:-translate-y-1 ${
               isDarkMode 
                 ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
                 : 'bg-white border-gray-200 hover:border-purple-200'

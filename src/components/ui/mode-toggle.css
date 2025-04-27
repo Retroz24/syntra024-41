@@ -7,10 +7,8 @@
 
   position: relative;
   z-index: 10;
-
   width: fit-content;
   height: 40px;
-
   border-radius: 9999px;
 }
 
@@ -23,50 +21,40 @@
   --width: 40px;
 
   cursor: pointer;
-
   position: relative;
   display: inline-block;
-
   padding: 0.5rem;
   width: calc((var(--width) + var(--gap)) * 1.8);
   height: 100%;
   background-color: var(--dark);
-
   border: 1px solid #777777;
-  border-bottom: 0;
-
   border-radius: 9999px;
   box-sizing: content-box;
   transition: all 0.3s ease-in-out;
 }
+
 .toggle-label::before {
   content: "";
-
   position: absolute;
   z-index: -10;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   width: calc(100% + 1rem);
   height: calc(100% + 1rem);
   background-color: var(--gray);
-
   border: 1px solid #777777;
-  border-bottom: 0;
   border-radius: 9999px;
-
   transition: all 0.3s ease-in-out;
 }
+
 .toggle-label::after {
   content: "";
-
   position: absolute;
   z-index: -10;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   width: 100%;
   height: 100%;
   background-image: radial-gradient(
@@ -74,18 +62,14 @@
     rgb(58, 155, 252) 0%,
     rgba(12, 12, 12, 1) 80%
   );
-
   border-radius: 9999px;
 }
 
 .toggle-cont .toggle-label .cont-icon {
   position: relative;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
-  position: relative;
   width: var(--width);
   height: 40px;
   background-image: radial-gradient(
@@ -93,13 +77,10 @@
     #666666 0%,
     var(--gray) 100%
   );
-
   border: 1px solid #aaaaaa;
-  border-bottom: 0;
   border-radius: 9999px;
   box-shadow: inset 0 -0.15rem 0.15rem var(--primary),
     inset 0 0 0.5rem 0.75rem var(--gray);
-
   transition: transform 0.3s ease-in-out;
 }
 
@@ -112,13 +93,10 @@
   position: absolute;
   top: 50%;
   left: 50%;
-
   display: block;
-
   width: calc(var(--width) * 1px);
   aspect-ratio: 1;
   background-color: var(--light);
-
   border-radius: 50%;
   transform-origin: 50% 50%;
   rotate: calc(1deg * var(--deg));
@@ -147,7 +125,6 @@
 .toggle-cont .toggle-input:checked + .toggle-label {
   background-color: #41434400;
   border: 1px solid #3d6970;
-  border-bottom: 0;
 }
 
 .toggle-cont .toggle-input:checked + .toggle-label::before {
@@ -162,7 +139,6 @@
     var(--primary) 100%
   );
   border: 1px solid var(--primary);
-  border-bottom: 0;
   transform: translateX(calc((var(--gap) * 2) + 100%)) rotate(-225deg);
 }
 
@@ -183,4 +159,21 @@
     width: calc(var(--width) * 1px);
     transform: translate(5000%, -50%);
   }
+}
+
+/* Dark theme specific styles */
+body.dark-theme {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.dark-theme .card {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.dark-theme .button {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border-color: #444;
 }

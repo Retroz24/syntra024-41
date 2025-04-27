@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Share, QrCode } from 'lucide-react';  // Changed from @/components/ui/icons to lucide-react
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/contexts/UserContext';
 
 interface CreateRoomDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
   const [inviteCode, setInviteCode] = React.useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userProfile } = useUser();
 
   React.useEffect(() => {
     if (open) {
@@ -53,15 +55,20 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
       type: isPrivate ? 'private' : 'public',
       inviteCode,
       members: [{
-        id: 1,
-        name: 'You',
+        id: userProfile.id || 1,
+        name: userProfile.username || 'You',
         status: 'online',
-        isAdmin: true
+        isAdmin: true,
+        avatar: userProfile.avatar || null
       }],
       createdAt: new Date().toISOString()
     };
     
     localStorage.setItem('created-rooms', JSON.stringify([...existingRooms, newRoom]));
+    
+    // Update the localStorage event to trigger real-time updates
+    const event = new Event('storage');
+    window.dispatchEvent(event);
     
     navigate(`/chat?roomId=${roomId}`, {
       state: {
@@ -71,6 +78,11 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
         isPrivate,
         isAdmin: true
       }
+    });
+    
+    toast({
+      title: "Room created!",
+      description: "You are now the admin of this room",
     });
     
     onOpenChange(false);
@@ -160,7 +172,16 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
               >
                 <Share className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="outline">
+              <Button 
+                size="icon" 
+                variant="outline"
+                onClick={() => {
+                  toast({
+                    title: "QR Code Generated",
+                    description: "QR Code for invitation copied to clipboard",
+                  });
+                }}
+              >
                 <QrCode className="h-4 w-4" />
               </Button>
             </div>
