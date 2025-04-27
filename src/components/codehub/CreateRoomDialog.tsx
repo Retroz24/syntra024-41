@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Share, QrCode } from '@/components/ui/icons';
+import { Share, QrCode } from 'lucide-react';  // Changed from @/components/ui/icons to lucide-react
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 

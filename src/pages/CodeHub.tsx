@@ -1,3 +1,4 @@
+
 // Import necessary components and hooks
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
@@ -12,6 +13,7 @@ import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button'; // Added missing Button import
 import { Bell } from 'lucide-react';
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { RoomJoinDialog } from "@/components/codehub/RoomJoinDialog";
