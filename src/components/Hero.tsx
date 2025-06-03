@@ -1,14 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import LottieAnimation from "./LottieAnimation";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import SimpleAuth from "./auth/SimpleAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Hero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [lottieData, setLottieData] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -80,6 +86,10 @@ const Hero = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMobile]);
   
+  const handleAuthSuccess = () => {
+    setAuthDialogOpen(false);
+  };
+  
   return (
     <section 
       className="overflow-hidden relative bg-cover" 
@@ -139,6 +149,27 @@ const Hero = () => {
                 Get Started
                 <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
+
+              {!user ? (
+                <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Access CodeHub
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <SimpleAuth onSuccess={handleAuthSuccess} />
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <Link to="/codehub">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Access CodeHub
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
           

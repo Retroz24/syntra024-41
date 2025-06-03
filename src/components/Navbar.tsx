@@ -1,8 +1,12 @@
 
 import { Link } from 'react-router-dom';
-import { Home, User } from 'lucide-react';
+import { Home, User, Lock, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const Navbar = () => {
+  const { user, signOut } = useAuth();
+
   return (
     <div className="fixed w-full z-50 top-4">
       <nav className="max-w-6xl mx-auto px-4">
@@ -26,12 +30,29 @@ const Navbar = () => {
               <Link to="/ai-playground" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
                 <span>AI Playground</span>
               </Link>
+              {user && (
+                <Link to="/codehub" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
+                  <Lock className="w-4 h-4" />
+                  <span>CodeHub</span>
+                </Link>
+              )}
               <Link to="/profile" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
                 <User className="w-4 h-4" />
                 <span>Profile</span>
               </Link>
+              {user && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={signOut}
+                  className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </Button>
+              )}
             </div>
-            {/* Mobile menu button - you can expand this later if needed */}
+            {/* Mobile menu button */}
             <button className="md:hidden flex items-center">
               <User className="w-5 h-5 text-gray-700" />
             </button>
