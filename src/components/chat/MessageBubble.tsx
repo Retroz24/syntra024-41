@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit2, Trash2, Save, X, Heart, MoreHorizontal } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Card } from '@/components/ui/card';
+import { Edit2, Trash2, Save, X } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -23,7 +23,6 @@ interface MessageBubbleProps {
 export default function MessageBubble({ message, isOwnMessage, onEdit, onDelete }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
-  const [liked, setLiked] = useState(false);
 
   const handleSaveEdit = () => {
     if (draft.trim() && draft !== message.content) {
@@ -37,122 +36,53 @@ export default function MessageBubble({ message, isOwnMessage, onEdit, onDelete 
     setIsEditing(false);
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-  };
-
   return (
-    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3 group`}>
-      <div className={`max-w-[70%] space-y-1 ${isOwnMessage ? 'order-2' : 'order-1'}`}>
-        {/* Message Bubble */}
-        <div
-          className={`relative px-4 py-3 rounded-2xl shadow-sm ${
-            isOwnMessage
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md'
-              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-md'
-          }`}
-        >
+    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+      <div className="max-w-md space-y-1">
+        <Card className={`p-3 ${isOwnMessage ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'}`}>
           {isEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                className={`min-h-[60px] resize-none border-0 p-0 ${
-                  isOwnMessage 
-                    ? 'bg-transparent text-white placeholder-gray-200' 
-                    : 'bg-transparent'
-                }`}
-                placeholder="Edit your message..."
+                className="min-h-[60px] resize-none"
                 rows={2}
               />
               <div className="flex justify-end space-x-2">
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={handleCancelEdit}
-                  className={isOwnMessage ? 'text-white hover:bg-white/20' : ''}
-                >
+                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
                   <X className="h-3 w-3" />
                 </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleSaveEdit}
-                  className={`${
-                    isOwnMessage 
-                      ? 'bg-white/20 text-white hover:bg-white/30' 
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
+                <Button size="sm" onClick={handleSaveEdit}>
                   <Save className="h-3 w-3" />
                 </Button>
               </div>
             </div>
           ) : (
-            <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+            <p className="whitespace-pre-wrap">{message.content}</p>
           )}
-        </div>
+        </Card>
         
-        {/* Message Footer */}
-        <div className={`flex items-center space-x-2 px-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-          <span className="text-xs text-gray-500">
-            {formatTime(message.inserted_at)}
-          </span>
-          
+        <div className={`flex items-center text-xs text-gray-500 space-x-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+          <span>{new Date(message.inserted_at).toLocaleTimeString()}</span>
           {message.updated_at !== message.inserted_at && (
-            <span className="text-xs text-gray-400 italic">edited</span>
+            <span className="italic">(edited)</span>
           )}
-          
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {!isOwnMessage && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setLiked(!liked)}
-                className={`h-6 w-6 p-0 ${liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+          {isOwnMessage && !isEditing && (
+            <div className="flex space-x-1">
+              <button
+                className="hover:text-blue-600 p-1"
+                onClick={() => setIsEditing(true)}
               >
-                <Heart className={`h-3 w-3 ${liked ? 'fill-current' : ''}`} />
-              </Button>
-            )}
-            
-            {isOwnMessage && !isEditing && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                  >
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                  <DropdownMenuItem
-                    onClick={() => setIsEditing(true)}
-                    className="cursor-pointer"
-                  >
-                    <Edit2 className="h-3 w-3 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDelete(message.id)}
-                    className="cursor-pointer text-red-600 focus:text-red-600"
-                  >
-                    <Trash2 className="h-3 w-3 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+                <Edit2 className="h-3 w-3" />
+              </button>
+              <button
+                className="hover:text-red-600 p-1"
+                onClick={() => onDelete(message.id)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

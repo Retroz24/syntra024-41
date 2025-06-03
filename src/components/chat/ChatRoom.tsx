@@ -3,10 +3,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Users, Smile, Paperclip, Mic, Camera } from 'lucide-react';
+import { ArrowLeft, Send, Users } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,9 +36,7 @@ export default function ChatRoom({ room, onLeave }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -212,7 +210,6 @@ export default function ChatRoom({ room, onLeave }: ChatRoomProps) {
 
       if (error) throw error;
       setNewMessage('');
-      inputRef.current?.focus();
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -267,76 +264,39 @@ export default function ChatRoom({ room, onLeave }: ChatRoomProps) {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading chat room...</p>
-        </div>
-      </div>
-    );
+    return <div className="p-4">Loading chat room...</div>;
   }
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Please log in to access the chat room.</p>
-        </div>
-      </div>
-    );
+    return <div className="p-4">Please log in to access the chat room.</div>;
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-black">
-      {/* Header - Instagram-like */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onLeave}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            >
-              <ArrowLeft className="h-5 w-5" />
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <Card className="rounded-none border-x-0 border-t-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" size="icon" onClick={onLeave}>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                {room.name.charAt(0)}
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{room.name} Room</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {memberCount} member{memberCount !== 1 ? 's' : ''} online
-                </p>
-              </div>
+            <div>
+              <h3 className="text-lg font-semibold">{room.name} Room</h3>
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {memberCount} member{memberCount !== 1 ? 's' : ''} online
+              </Badge>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Badge 
-              variant="secondary" 
-              className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            >
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              Online
-            </Badge>
-          </div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
 
-      {/* Messages Area */}
+      {/* Messages */}
       <ScrollArea className="flex-1 p-4">
-        <div className="max-w-4xl mx-auto space-y-1">
+        <div className="space-y-4">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-gray-500 dark:text-gray-400 text-lg">No messages yet</p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm">Be the first to start the conversation!</p>
+            <div className="text-center text-gray-500 py-8">
+              No messages yet. Be the first to say hello!
             </div>
           ) : (
             messages.map(message => (
@@ -353,68 +313,23 @@ export default function ChatRoom({ room, onLeave }: ChatRoomProps) {
         </div>
       </ScrollArea>
 
-      {/* Input Area - Instagram-like */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1 relative">
-              <Input
-                ref={inputRef}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Message..."
-                className="pr-12 rounded-full border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
-                maxLength={1000}
-              />
-              
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 h-auto hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full"
-                >
-                  <Smile className="h-4 w-4 text-gray-500" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              >
-                <Paperclip className="h-5 w-5 text-gray-500" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              >
-                <Camera className="h-5 w-5 text-gray-500" />
-              </Button>
-              
-              <Button
-                onClick={sendMessage}
-                disabled={!newMessage.trim()}
-                className={`p-2 rounded-full transition-all ${
-                  newMessage.trim()
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                <Send className="h-5 w-5" />
-              </Button>
-            </div>
+      {/* Input */}
+      <Card className="rounded-none border-x-0 border-b-0">
+        <CardContent className="p-4">
+          <div className="flex space-x-2">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              className="flex-1"
+            />
+            <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
-          
-          <div className="text-xs text-gray-400 mt-2 text-center">
-            Press Enter to send • Shift+Enter for new line
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
