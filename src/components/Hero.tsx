@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Lock } from "lucide-react";
@@ -89,6 +88,10 @@ const Hero = () => {
   
   const handleAuthSuccess = () => {
     setAuthDialogOpen(false);
+    // Small delay to ensure auth state is updated
+    setTimeout(() => {
+      window.location.href = '/codehub';
+    }, 500);
   };
   
   return (
@@ -160,7 +163,7 @@ const Hero = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md [&>button]:hidden">
-                    <AuthForm />
+                    <AuthForm onSuccess={handleAuthSuccess} />
                   </DialogContent>
                 </Dialog>
               ) : (
