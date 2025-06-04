@@ -1,4 +1,3 @@
-
 // Import necessary components and hooks
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
@@ -8,6 +7,7 @@ import NotificationPanel from '@/components/codehub/NotificationPanel';
 import JoinByCodeDialog from '@/components/codehub/JoinByCodeDialog';
 import CreateRoomDialog from '@/components/codehub/CreateRoomDialog';
 import MiniProfile from '@/components/codehub/MiniProfile';
+import AuthWrapper from '@/components/chat/AuthWrapper';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
@@ -208,122 +208,126 @@ const CodeHub = () => {
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-    const filteredWebDevTopics = webDevData.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+  const filteredWebDevTopics = webDevData.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
-    const filteredDevopsTopics = devopsData.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+  const filteredDevopsTopics = devopsData.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 py-16">
-        {/* Header with notifications and theme toggle */}
-        <div className="flex justify-between items-center mb-6 mt-8">
-          <h1 className="text-3xl font-bold">CodeHub</h1>
-          <div className="flex items-center gap-4">
-            <Popover open={notificationOpen} onOpenChange={setNotificationOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" className="relative p-2">
-                  <Bell className="w-5 h-5" />
-                  {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="end">
-                <NotificationPanel
-                  notifications={notifications}
-                  onMarkRead={handleMarkRead}
-                  onAccept={handleAccept}
-                  onDecline={handleDecline}
-                  onClearAll={handleClearAll}
-                />
-              </PopoverContent>
-            </Popover>
-            <ThemeToggle />
-          </div>
-        </div>
-
-        {/* Hero section */}
-        <HeroSection
-          onSearch={handleSearch}
-          onCreateRoom={handleCreateRoom}
-          onJoinByCode={() => setJoinByCodeOpen(true)}
-          onRandomMatch={handleRandomMatch}
-        />
-
-        {/* Category sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
-          <div className="lg:col-span-2">
-            <CategorySection
-              title="Programming & Tech"
-              items={filteredTechTopics}
-              onItemClick={handleItemClick}
-            />
-            
-            <CategorySection
-              title="Web Development"
-              items={filteredWebDevTopics}
-              onItemClick={handleItemClick}
-            />
-            
-            <CategorySection
-              title="DevOps & Tools"
-              items={filteredDevopsTopics}
-              onItemClick={handleItemClick}
-            />
-            
-            <CategorySection
-              title="Databases & Storage"
-              items={filteredDatabaseTopics}
-              onItemClick={handleItemClick}
-            />
-            
-            <CategorySection
-              title="AI & Machine Learning"
-              items={filteredAiTopics}
-              onItemClick={handleItemClick}
-            />
-            
-            <CategorySection
-              title="Data Structures & Algorithms"
-              items={filteredDsaTopics}
-              onItemClick={handleItemClick}
-            />
-          </div>
+    <AuthWrapper>
+      {(user) => (
+        <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
+          <Navbar />
           
-          {/* Sidebar content */}
-          <div className="space-y-6">
-            <MiniProfile username={userProfile.username !== 'guest' ? userProfile.username : undefined} />
-          </div>
-        </div>
-      </div>
+          <div className="max-w-7xl mx-auto px-4 py-16">
+            {/* Header with notifications and theme toggle */}
+            <div className="flex justify-between items-center mb-6 mt-8">
+              <h1 className="text-3xl font-bold">CodeHub</h1>
+              <div className="flex items-center gap-4">
+                <Popover open={notificationOpen} onOpenChange={setNotificationOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" className="relative p-2">
+                      <Bell className="w-5 h-5" />
+                      {notifications.filter(n => !n.read).length > 0 && (
+                        <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="end">
+                    <NotificationPanel
+                      notifications={notifications}
+                      onMarkRead={handleMarkRead}
+                      onAccept={handleAccept}
+                      onDecline={handleDecline}
+                      onClearAll={handleClearAll}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <ThemeToggle />
+              </div>
+            </div>
 
-      {/* Dialogs */}
-      <JoinByCodeDialog 
-        open={joinByCodeOpen} 
-        onOpenChange={setJoinByCodeOpen} 
-      />
-      <CreateRoomDialog
-        open={createRoomOpen}
-        onOpenChange={setCreateRoomOpen}
-      />
-      {selectedRoom && (
-        <RoomJoinDialog
-          open={joinRoomOpen}
-          onOpenChange={setJoinRoomOpen}
-          roomName={selectedRoom.name}
-          roomId={selectedRoom.id}
-          category={selectedRoom.category}
-        />
+            {/* Hero section */}
+            <HeroSection
+              onSearch={handleSearch}
+              onCreateRoom={handleCreateRoom}
+              onJoinByCode={() => setJoinByCodeOpen(true)}
+              onRandomMatch={handleRandomMatch}
+            />
+
+            {/* Category sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+              <div className="lg:col-span-2">
+                <CategorySection
+                  title="Programming & Tech"
+                  items={filteredTechTopics}
+                  onItemClick={handleItemClick}
+                />
+                
+                <CategorySection
+                  title="Web Development"
+                  items={filteredWebDevTopics}
+                  onItemClick={handleItemClick}
+                />
+                
+                <CategorySection
+                  title="DevOps & Tools"
+                  items={filteredDevopsTopics}
+                  onItemClick={handleItemClick}
+                />
+                
+                <CategorySection
+                  title="Databases & Storage"
+                  items={filteredDatabaseTopics}
+                  onItemClick={handleItemClick}
+                />
+                
+                <CategorySection
+                  title="AI & Machine Learning"
+                  items={filteredAiTopics}
+                  onItemClick={handleItemClick}
+                />
+                
+                <CategorySection
+                  title="Data Structures & Algorithms"
+                  items={filteredDsaTopics}
+                  onItemClick={handleItemClick}
+                />
+              </div>
+              
+              {/* Sidebar content */}
+              <div className="space-y-6">
+                <MiniProfile username={userProfile.username !== 'guest' ? userProfile.username : undefined} />
+              </div>
+            </div>
+          </div>
+
+          {/* Dialogs */}
+          <JoinByCodeDialog 
+            open={joinByCodeOpen} 
+            onOpenChange={setJoinByCodeOpen} 
+          />
+          <CreateRoomDialog
+            open={createRoomOpen}
+            onOpenChange={setCreateRoomOpen}
+          />
+          {selectedRoom && (
+            <RoomJoinDialog
+              open={joinRoomOpen}
+              onOpenChange={setJoinRoomOpen}
+              roomName={selectedRoom.name}
+              roomId={selectedRoom.id}
+              category={selectedRoom.category}
+            />
+          )}
+        </div>
       )}
-    </div>
+    </AuthWrapper>
   );
 };
 

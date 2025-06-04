@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Lock } from "lucide-react";
@@ -5,7 +6,7 @@ import LottieAnimation from "./LottieAnimation";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import SimpleAuth from "./auth/SimpleAuth";
+import AuthForm from "./auth/AuthForm";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Hero = () => {
@@ -158,8 +159,8 @@ const Hero = () => {
                       Access CodeHub
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <SimpleAuth onSuccess={handleAuthSuccess} />
+                  <DialogContent className="sm:max-w-md [&>button]:hidden">
+                    <AuthForm />
                   </DialogContent>
                 </Dialog>
               ) : (

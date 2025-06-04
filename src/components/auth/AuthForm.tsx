@@ -8,7 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { User, Lock, Mail } from 'lucide-react';
 
-export default function AuthForm() {
+interface AuthFormProps {
+  onSuccess?: () => void;
+}
+
+export default function AuthForm({ onSuccess }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +31,8 @@ export default function AuthForm() {
           description: error.message || "Please check your credentials and try again",
           variant: "destructive",
         });
+      } else {
+        onSuccess?.();
       }
     } catch (error: any) {
       toast({
@@ -51,6 +57,8 @@ export default function AuthForm() {
           description: error.message || "Please check your information and try again",
           variant: "destructive",
         });
+      } else {
+        onSuccess?.();
       }
     } catch (error: any) {
       toast({
@@ -146,12 +154,13 @@ export default function AuthForm() {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Password"
+                    placeholder="Password (min 6 characters)"
                     className="pl-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
                     required
+                    minLength={6}
                   />
                 </div>
               </div>

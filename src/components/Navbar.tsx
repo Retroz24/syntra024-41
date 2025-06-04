@@ -69,42 +69,44 @@ const Navbar = () => {
                 </Link>
               )}
               
-              <Link to="/profile" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
-                <User className="w-4 h-4" />
-                <span>Profile</span>
-              </Link>
-              
               {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="rounded-full p-0 w-8 h-8">
-                      <Avatar className="h-8 w-8">
-                        {profile?.avatar_url ? (
-                          <AvatarImage src={profile.avatar_url} alt={profile.full_name || user.email || ""} />
-                        ) : (
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/avatar">Edit Avatar</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-red-600">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <Link to="/profile" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
+                  </Link>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="rounded-full p-0 w-8 h-8">
+                        <Avatar className="h-8 w-8">
+                          {profile?.avatar_url ? (
+                            <AvatarImage src={profile.avatar_url} alt={profile.full_name || user.email || ""} />
+                          ) : (
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {getInitials()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Account</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile">Profile Settings</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/avatar">Edit Avatar</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={signOut} className="text-red-600">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ) : (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/">
