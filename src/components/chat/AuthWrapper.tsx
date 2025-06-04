@@ -36,7 +36,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   if (!user) {
     return (
       <Dialog open={authDialogOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md" hideCloseButton>
+        <DialogContent className="sm:max-w-md [&>button]:hidden">
           <AuthForm />
         </DialogContent>
       </Dialog>
