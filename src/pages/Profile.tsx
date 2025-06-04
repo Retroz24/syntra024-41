@@ -1,190 +1,94 @@
 
-import React, { useState } from "react";
+import React from "react";
 import Navbar from "@/components/Navbar";
-import ProfileUpload from "@/components/ProfileUpload";
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
-import { useUser } from "@/contexts/UserContext";
-import { Settings, User, Bell, Shield } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProfileForm from "@/components/auth/ProfileForm";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import AuthForm from "@/components/auth/AuthForm";
+import { Loader2 } from "lucide-react";
 
 const Profile = () => {
-  const { userProfile, updateUserProfile } = useUser();
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: userProfile.displayName,
-    email: "",
-    username: userProfile.username,
-    avatarUrl: userProfile.avatarUrl,
-    preferences: {
-      aiSuggestions: true,
-      personalizedLearning: true,
-      notifications: true,
-      privateProfile: false
+  const { user, isLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Redirect to home page if user logs out
+    if (!isLoading && !user) {
+      navigate('/');
     }
-  });
+  }, [user, isLoading, navigate]);
 
-  const handleProfileUpdate = () => {
-    updateUserProfile({
-      displayName: formData.name,
-      username: formData.username,
-      avatarUrl: formData.avatarUrl
-    });
-    
-    toast({
-      title: "Profile Updated",
-      description: "Your changes have been saved successfully",
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleImageUpdate = (imageUrl: string) => {
-    setFormData(prev => ({ ...prev, avatarUrl: imageUrl }));
-  };
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+        <Navbar />
+        <div className="max-w-md mx-auto pt-24 px-4">
+          <AuthForm />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mt-6 mb-4 text-gray-900 dark:text-white">
-            Profile Settings
+            Account
           </h1>
           <p className="text-gray-600 dark:text-gray-300 text-lg">
             Manage your account settings and preferences
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-          <Card className="p-8 md:col-span-2 bg-white dark:bg-gray-800">
-            <div className="flex items-center gap-6 mb-8">
-              <ProfileUpload
-                currentImage={formData.avatarUrl}
-                username={formData.username}
-                onImageUpdate={handleImageUpdate}
-              />
-              <div>
-                <h2 className="text-2xl font-semibold dark:text-white">Personal Information</h2>
-                <p className="text-gray-500 dark:text-gray-400">Update your photo and personal details</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Display Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter your name"
-                    className="dark:bg-gray-700"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={formData.username}
-                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                    placeholder="Enter your username"
-                    className="dark:bg-gray-700"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="Enter your email"
-                  className="dark:bg-gray-700"
-                />
-              </div>
-            </div>
-          </Card>
-
-          <div className="space-y-6">
-            <Card className="p-6 bg-white dark:bg-gray-800">
-              <h3 className="text-lg font-medium mb-4 dark:text-white flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Preferences
-              </h3>
+        <Tabs defaultValue="profile" className="max-w-3xl mx-auto">
+          <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-8">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="account">Account</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="profile">
+            <ProfileForm />
+          </TabsContent>
+          
+          <TabsContent value="account">
+            <Card className="w-full max-w-md mx-auto p-6">
+              <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
+              
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>AI Suggestions</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Receive personalized code suggestions
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.preferences.aiSuggestions}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, aiSuggestions: checked }
-                      }))
-                    }
-                  />
+                <div>
+                  <h3 className="text-md font-medium">Email Address</h3>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Personalized Learning</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Adapt content to your style
-                    </p>
+                
+                <div>
+                  <h3 className="text-md font-medium">Account Actions</h3>
+                  <div className="mt-4">
+                    <Button variant="destructive" onClick={signOut}>
+                      Sign Out
+                    </Button>
                   </div>
-                  <Switch
-                    checked={formData.preferences.personalizedLearning}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, personalizedLearning: checked }
-                      }))
-                    }
-                  />
                 </div>
               </div>
             </Card>
-
-            <Card className="p-6 bg-white dark:bg-gray-800">
-              <h3 className="text-lg font-medium mb-4 dark:text-white flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Privacy
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Private Profile</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Only show profile to connections
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.preferences.privateProfile}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, privateProfile: checked }
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-8">
-          <Button onClick={handleProfileUpdate} size="lg">
-            Save Changes
-          </Button>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

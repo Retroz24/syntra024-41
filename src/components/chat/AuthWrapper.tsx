@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import SimpleAuth from '@/components/auth/SimpleAuth';
+import AuthForm from '@/components/auth/AuthForm';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@supabase/supabase-js';
+import { Loader2 } from 'lucide-react';
 
 interface AuthWrapperProps {
   children: (user: User) => React.ReactNode;
@@ -12,25 +13,31 @@ interface AuthWrapperProps {
 
 export default function AuthWrapper({ children }: AuthWrapperProps) {
   const { user, isLoading, signOut } = useAuth();
-  const [authDialogOpen, setAuthDialogOpen] = React.useState(!user);
+  const [authDialogOpen, setAuthDialogOpen] = React.useState(false);
 
-  React.useEffect(() => {
-    setAuthDialogOpen(!user);
+  useEffect(() => {
+    // Close dialog if user is logged in
+    if (user) {
+      setAuthDialogOpen(false);
+    } else {
+      setAuthDialogOpen(true);
+    }
   }, [user]);
 
-  const handleAuthSuccess = () => {
-    setAuthDialogOpen(false);
-  };
-
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+        <p className="text-muted-foreground">Loading your account...</p>
+      </div>
+    );
   }
 
   if (!user) {
     return (
       <Dialog open={authDialogOpen} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md" hideCloseButton>
-          <SimpleAuth onSuccess={handleAuthSuccess} />
+          <AuthForm />
         </DialogContent>
       </Dialog>
     );
@@ -39,7 +46,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   return (
     <div>
       <div className="flex items-center justify-between p-4 border-b">
-        <span>Welcome, User {localStorage.getItem('syntra_auth_code')}</span>
+        <span>Welcome, {user.email}</span>
         <Button variant="outline" onClick={signOut}>
           Sign Out
         </Button>

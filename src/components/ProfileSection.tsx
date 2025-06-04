@@ -3,12 +3,34 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "./UserAvatar";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface ProfileSectionProps {
-  username: string;
-}
+export function ProfileSection() {
+  const { profile, user } = useAuth();
+  
+  if (!user) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Sign In Required</CardTitle>
+          <CardDescription>Please sign in to view your profile</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild>
+            <Link to="/">Sign In</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
-export function ProfileSection({ username }: ProfileSectionProps) {
+  const username = profile?.full_name || user.email?.split('@')[0] || 'User';
+  const avatarUrl = profile?.avatar_url;
+  const avatarId = Number(localStorage.getItem('userAvatar') ? 
+    JSON.parse(localStorage.getItem('userAvatar') || '{}').avatarId : null);
+  const customImage = profile?.avatar_url || (localStorage.getItem('userAvatar') ? 
+    JSON.parse(localStorage.getItem('userAvatar') || '{}').customImage : null);
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -18,7 +40,12 @@ export function ProfileSection({ username }: ProfileSectionProps) {
       <CardContent>
         <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="flex flex-col items-center">
-            <UserAvatar username={username} size="lg" />
+            <UserAvatar 
+              username={username} 
+              size="lg" 
+              avatarId={avatarId} 
+              customImage={avatarUrl || customImage} 
+            />
             <Button asChild variant="link" className="mt-2">
               <Link to="/avatar">Change Avatar</Link>
             </Button>
