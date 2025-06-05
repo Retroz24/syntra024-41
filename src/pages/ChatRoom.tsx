@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useDarkMode } from '@/contexts/DarkModeContext';
-import RoomSelector from '@/components/chat/RoomSelector';
+import EnhancedRoomSelector from '@/components/chat/EnhancedRoomSelector';
 import ChatRoom from '@/components/chat/ChatRoom';
 import AuthWrapper from '@/components/chat/AuthWrapper';
 
@@ -10,6 +10,11 @@ interface Room {
   id: string;
   slug: string;
   name: string;
+  icon_name: string;
+  description: string;
+  status: string;
+  max_members: number;
+  invite_code: string;
   created_at: string;
 }
 
@@ -30,7 +35,7 @@ const ChatRoomPage = () => {
           {(user) => (
             <>
               {!selectedRoom ? (
-                <RoomSelector onSelectRoom={setSelectedRoom} />
+                <EnhancedRoomSelector onSelectRoom={setSelectedRoom} />
               ) : (
                 <ChatRoom room={selectedRoom} onLeave={handleLeaveRoom} />
               )}

@@ -1,4 +1,5 @@
 
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export type RoomType = 'public' | 'private';
@@ -27,7 +28,7 @@ export interface RoomData {
 }
 
 /**
- * Creates a new study room
+ * Creates a new study room using Supabase
  */
 export const createRoom = async (
   name: string,
@@ -41,11 +42,43 @@ export const createRoom = async (
   userAvatar?: string | null
 ): Promise<RoomData | null> => {
   try {
-    const roomId = Math.random().toString(36).substring(2, 9);
-    const inviteCode = Math.random().toString(36).substring(7).toUpperCase();
+    // Generate invite code
+    const { data: inviteCodeData, error: codeError } = await supabase
+      .rpc('generate_invite_code');
     
+    if (codeError) throw codeError;
+
+    const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
+    
+    // Create room in Supabase
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .insert({
+        name,
+        slug,
+        icon_name: category.toLowerCase(),
+        description,
+        status: 'idle',
+        max_members: maxMembers,
+        invite_code: inviteCodeData
+      })
+      .select()
+      .single();
+
+    if (roomError) throw roomError;
+
+    // Add creator as first member
+    const { error: membershipError } = await supabase
+      .from('memberships')
+      .insert({
+        user_id: userId,
+        room_id: roomData.id
+      });
+
+    if (membershipError) throw membershipError;
+
     const room: RoomData = {
-      id: roomId,
+      id: roomData.id,
       name,
       description,
       category,
@@ -59,17 +92,10 @@ export const createRoom = async (
         avatar: userAvatar || null
       }],
       type,
-      inviteCode,
-      createdAt: new Date().toISOString(),
+      inviteCode: inviteCodeData,
+      createdAt: roomData.created_at,
       createdBy: userName,
     };
-    
-    // Store in localStorage
-    const existingRooms = JSON.parse(localStorage.getItem('created-rooms') || '[]');
-    localStorage.setItem('created-rooms', JSON.stringify([...existingRooms, room]));
-    
-    // Trigger storage event for real-time updates
-    window.dispatchEvent(new Event('storage'));
     
     toast.success('Room created successfully!');
     return room;
@@ -83,13 +109,15 @@ export const createRoom = async (
 /**
  * Generates invite link for a room
  */
-export const generateInviteLink = (roomId: string | number): string => {
+export const generateInviteLink = (roomId: string | number, inviteCode?: string): string => {
   const baseUrl = window.location.origin;
-  return `${baseUrl}/room/${roomId}?invite=true`;
+  return inviteCode 
+    ? `${baseUrl}/invite?room_id=${roomId}&code=${inviteCode}`
+    : `${baseUrl}/invite?room_id=${roomId}`;
 };
 
 /**
- * Joins a room by ID
+ * Joins a room by ID using Supabase
  */
 export const joinRoom = async (
   roomId: string | number, 
@@ -98,53 +126,54 @@ export const joinRoom = async (
   userAvatar?: string | null
 ): Promise<boolean> => {
   try {
-    // Get existing rooms
-    const createdRooms = JSON.parse(localStorage.getItem('created-rooms') || '[]');
-    const joinedRooms = JSON.parse(localStorage.getItem('joined-rooms') || '[]');
-    
-    // Find the room to join
-    const roomIndex = createdRooms.findIndex((room: RoomData) => room.id === roomId);
-    
-    if (roomIndex === -1) {
+    // Check if room exists and get details
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('id', roomId)
+      .single();
+
+    if (roomError || !roomData) {
       toast.error('Room not found');
       return false;
     }
-    
-    const room = createdRooms[roomIndex];
-    
+
     // Check if user is already a member
-    if (room.members.some(member => member.id === userId)) {
+    const { data: existingMembership } = await supabase
+      .from('memberships')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('room_id', roomId)
+      .single();
+
+    if (existingMembership) {
       toast.info('You are already a member of this room');
       return true;
     }
-    
+
     // Check if room is at max capacity
-    if (room.members.length >= room.maxMembers) {
+    const { count, error: countError } = await supabase
+      .from('memberships')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId);
+
+    if (countError) throw countError;
+
+    if (count && count >= roomData.max_members) {
       toast.error('This room is full');
       return false;
     }
-    
+
     // Add user to the room
-    const newMember: RoomMember = {
-      id: userId,
-      name: userName,
-      status: 'online',
-      isAdmin: false,
-      avatar: userAvatar || null
-    };
-    
-    room.members.push(newMember);
-    
-    // Update the room in localStorage
-    localStorage.setItem('created-rooms', JSON.stringify(createdRooms));
-    
-    // Add to joined rooms
-    joinedRooms.push(room);
-    localStorage.setItem('joined-rooms', JSON.stringify(joinedRooms));
-    
-    // Trigger storage event for real-time updates
-    window.dispatchEvent(new Event('storage'));
-    
+    const { error: joinError } = await supabase
+      .from('memberships')
+      .insert({
+        user_id: userId,
+        room_id: roomId
+      });
+
+    if (joinError) throw joinError;
+
     toast.success('Joined room successfully!');
     return true;
   } catch (error) {
@@ -155,64 +184,19 @@ export const joinRoom = async (
 };
 
 /**
- * Leave a room
+ * Leave a room using Supabase
  */
 export const leaveRoom = async (roomId: string | number, userId: number | string): Promise<boolean> => {
   try {
-    // Get existing rooms
-    const createdRooms = JSON.parse(localStorage.getItem('created-rooms') || '[]');
-    const joinedRooms = JSON.parse(localStorage.getItem('joined-rooms') || '[]');
-    
-    // Find the room
-    const roomIndex = createdRooms.findIndex((room: RoomData) => room.id === roomId);
-    
-    if (roomIndex === -1) {
-      toast.error('Room not found');
-      return false;
-    }
-    
-    const room = createdRooms[roomIndex];
-    
-    // Remove user from members
-    const memberIndex = room.members.findIndex(member => member.id === userId);
-    
-    if (memberIndex === -1) {
-      toast.error('You are not a member of this room');
-      return false;
-    }
-    
-    // If user is the only admin, check if there are other members
-    const isAdmin = room.members[memberIndex].isAdmin;
-    
-    if (isAdmin && room.members.filter(member => member.isAdmin).length === 1 && room.members.length > 1) {
-      // Make another member an admin
-      const nextAdminIndex = room.members.findIndex(member => member.id !== userId);
-      if (nextAdminIndex !== -1) {
-        room.members[nextAdminIndex].isAdmin = true;
-      }
-    }
-    
-    // Remove the member
-    room.members.splice(memberIndex, 1);
-    
-    // If room is empty, remove it entirely
-    if (room.members.length === 0) {
-      createdRooms.splice(roomIndex, 1);
-      const joinedRoomIndex = joinedRooms.findIndex((r: RoomData) => r.id === roomId);
-      if (joinedRoomIndex !== -1) {
-        joinedRooms.splice(joinedRoomIndex, 1);
-      }
-    } else {
-      // Update the room
-      createdRooms[roomIndex] = room;
-    }
-    
-    localStorage.setItem('created-rooms', JSON.stringify(createdRooms));
-    localStorage.setItem('joined-rooms', JSON.stringify(joinedRooms));
-    
-    // Trigger storage event for real-time updates
-    window.dispatchEvent(new Event('storage'));
-    
+    // Remove user from memberships
+    const { error } = await supabase
+      .from('memberships')
+      .delete()
+      .eq('user_id', userId)
+      .eq('room_id', roomId);
+
+    if (error) throw error;
+
     toast.success('Left room successfully');
     return true;
   } catch (error) {

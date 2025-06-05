@@ -130,21 +130,36 @@ export type Database = {
       rooms: {
         Row: {
           created_at: string | null
+          description: string | null
+          icon_name: string | null
           id: string
+          invite_code: string | null
+          max_members: number | null
           name: string
           slug: string
+          status: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
+          icon_name?: string | null
           id?: string
+          invite_code?: string | null
+          max_members?: number | null
           name: string
           slug: string
+          status?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
+          icon_name?: string | null
           id?: string
+          invite_code?: string | null
+          max_members?: number | null
           name?: string
           slug?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -156,6 +171,10 @@ export type Database = {
       cleanup_expired_otp_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_otp_code: {
         Args: Record<PropertyKey, never>
