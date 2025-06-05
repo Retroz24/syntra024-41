@@ -1,5 +1,5 @@
 // Import necessary components and hooks
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/codehub/HeroSection';
 import CategorySection from '@/components/codehub/CategorySection';
@@ -7,17 +7,16 @@ import NotificationPanel from '@/components/codehub/NotificationPanel';
 import JoinByCodeDialog from '@/components/codehub/JoinByCodeDialog';
 import CreateRoomDialog from '@/components/codehub/CreateRoomDialog';
 import MiniProfile from '@/components/codehub/MiniProfile';
+import UserRoomsPanel from '@/components/codehub/UserRoomsPanel';
 import AuthWrapper from '@/components/chat/AuthWrapper';
 import { useNavigate } from 'react-router-dom';
-import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button'; // Added missing Button import
+import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { RoomJoinDialog } from "@/components/codehub/RoomJoinDialog";
-import { QrCode, Share } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 // Define expanded data outside of the component
 export const techTopicsData = [
@@ -85,7 +84,6 @@ export const devopsData = [
 ];
 
 const CodeHub = () => {
-  const { isDarkMode } = useDarkMode();
   const { userProfile } = useUser();
   const [joinByCodeOpen, setJoinByCodeOpen] = useState(false);
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
@@ -98,7 +96,70 @@ const CodeHub = () => {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<{ name: string; id: string; category: string } | null>(null);
   const [joinRoomOpen, setJoinRoomOpen] = useState(false);
+  const [memberCounts, setMemberCounts] = useState<{ [key: string]: number }>({});
   
+  // Fetch real member counts from Supabase
+  useEffect(() => {
+    fetchMemberCounts();
+    
+    // Set up real-time subscription for membership changes
+    const membershipChannel = supabase
+      .channel('membership-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'memberships'
+        },
+        () => {
+          fetchMemberCounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(membershipChannel);
+    };
+  }, []);
+
+  const fetchMemberCounts = async () => {
+    try {
+      const { data: rooms, error } = await supabase
+        .from('rooms')
+        .select('id, name');
+
+      if (error) throw error;
+
+      const counts: { [key: string]: number } = {};
+      
+      for (const room of rooms || []) {
+        const { count, error: countError } = await supabase
+          .from('memberships')
+          .select('*', { count: 'exact', head: true })
+          .eq('room_id', room.id);
+
+        if (!countError) {
+          counts[room.name.toLowerCase()] = count || 0;
+        }
+      }
+      
+      setMemberCounts(counts);
+    } catch (error) {
+      console.error('Error fetching member counts:', error);
+    }
+  };
+
+  // Update category data with real member counts
+  const updateCategoryWithMemberCounts = (items: any[]) => {
+    return items.map(item => ({
+      ...item,
+      members: memberCounts[item.name.toLowerCase()] || 0,
+      status: (memberCounts[item.name.toLowerCase()] || 0) > 5 ? 'busy' as const : 
+              (memberCounts[item.name.toLowerCase()] || 0) > 0 ? 'active' as const : 'idle' as const
+    }));
+  };
+
   // Handle notification actions
   const handleMarkRead = (id: string) => {
     setNotifications(prev => 
@@ -152,8 +213,13 @@ const CodeHub = () => {
 
   // Handle random matching
   const handleRandomMatch = () => {
-    const topics = [...techTopicsData, ...databaseData, ...aiData, ...dsaData];
-    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    const allItems = [
+      ...updateCategoryWithMemberCounts(techTopicsData),
+      ...updateCategoryWithMemberCounts(databaseData),
+      ...updateCategoryWithMemberCounts(aiData),
+      ...updateCategoryWithMemberCounts(dsaData)
+    ];
+    const randomTopic = allItems[Math.floor(Math.random() * allItems.length)];
     
     toast({
       title: "Random matching",
@@ -187,33 +253,33 @@ const CodeHub = () => {
     return `${window.location.origin}/join/${roomId}`;
   };
 
-  // Filtered topics based on search query
-  const filteredTechTopics = techTopicsData.filter(item => 
+  // Filtered topics based on search query with updated member counts
+  const filteredTechTopics = updateCategoryWithMemberCounts(techTopicsData).filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
-  const filteredDatabaseTopics = databaseData.filter(item => 
+  const filteredDatabaseTopics = updateCategoryWithMemberCounts(databaseData).filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
-  const filteredAiTopics = aiData.filter(item => 
+  const filteredAiTopics = updateCategoryWithMemberCounts(aiData).filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
-  const filteredDsaTopics = dsaData.filter(item => 
+  const filteredDsaTopics = updateCategoryWithMemberCounts(dsaData).filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredWebDevTopics = webDevData.filter(item =>
+  const filteredWebDevTopics = updateCategoryWithMemberCounts(webDevData).filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredDevopsTopics = devopsData.filter(item =>
+  const filteredDevopsTopics = updateCategoryWithMemberCounts(devopsData).filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -221,11 +287,11 @@ const CodeHub = () => {
   return (
     <AuthWrapper>
       {(user) => (
-        <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
+        <div className="min-h-screen bg-gray-50 text-gray-900">
           <Navbar />
           
           <div className="max-w-7xl mx-auto px-4 py-16">
-            {/* Header with notifications and theme toggle */}
+            {/* Header with notifications */}
             <div className="flex justify-between items-center mb-6 mt-8">
               <h1 className="text-3xl font-bold">CodeHub</h1>
               <div className="flex items-center gap-4">
@@ -248,7 +314,6 @@ const CodeHub = () => {
                     />
                   </PopoverContent>
                 </Popover>
-                <ThemeToggle />
               </div>
             </div>
 
@@ -303,6 +368,7 @@ const CodeHub = () => {
               {/* Sidebar content */}
               <div className="space-y-6">
                 <MiniProfile username={userProfile.username !== 'guest' ? userProfile.username : undefined} />
+                <UserRoomsPanel />
               </div>
             </div>
           </div>
