@@ -28,7 +28,7 @@ export default function InvitePage() {
           description: "Room ID is missing from invite link",
           variant: "destructive"
         });
-        navigate('/codehub');
+        navigate('/chat');
         return;
       }
 
@@ -46,7 +46,7 @@ export default function InvitePage() {
             description: "This invite link may be invalid or expired",
             variant: "destructive"
           });
-          navigate('/codehub');
+          navigate('/chat');
           return;
         }
 
@@ -57,7 +57,7 @@ export default function InvitePage() {
             description: "This invite link appears to be invalid",
             variant: "destructive"
           });
-          navigate('/codehub');
+          navigate('/chat');
           return;
         }
 
@@ -74,7 +74,7 @@ export default function InvitePage() {
           description: "Failed to process invite",
           variant: "destructive"
         });
-        navigate('/codehub');
+        navigate('/chat');
       } finally {
         setLoading(false);
       }
@@ -174,10 +174,10 @@ export default function InvitePage() {
           <CardContent className="p-6 text-center">
             <p className="text-gray-600">Invalid or expired invite link</p>
             <Button 
-              onClick={() => navigate('/codehub')} 
+              onClick={() => navigate('/chat')} 
               className="mt-4"
             >
-              Go to CodeHub
+              Go to Chat
             </Button>
           </CardContent>
         </Card>
@@ -247,7 +247,7 @@ export default function InvitePage() {
           <div className="text-center">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/codehub')}
+              onClick={() => navigate('/chat')}
               className="text-sm"
             >
               Browse other rooms
