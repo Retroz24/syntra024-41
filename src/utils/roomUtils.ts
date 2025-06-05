@@ -5,7 +5,7 @@ import { toast } from "sonner";
 export type RoomType = 'public' | 'private';
 
 export interface RoomMember {
-  id: string;
+  id: number | string;
   name: string;
   status: 'online' | 'offline' | 'idle' | 'busy';
   isAdmin: boolean;
@@ -13,7 +13,7 @@ export interface RoomMember {
 }
 
 export interface RoomData {
-  id: string;
+  id: string | number;
   name: string;
   description: string;
   category: string;
@@ -37,7 +37,7 @@ export const createRoom = async (
   language: string = '',
   maxMembers: number = 10,
   type: RoomType = 'public',
-  userId: string,
+  userId: number | string,
   userName: string,
   userAvatar?: string | null
 ): Promise<RoomData | null> => {
@@ -109,7 +109,7 @@ export const createRoom = async (
 /**
  * Generates invite link for a room
  */
-export const generateInviteLink = (roomId: string, inviteCode?: string): string => {
+export const generateInviteLink = (roomId: string | number, inviteCode?: string): string => {
   const baseUrl = window.location.origin;
   return inviteCode 
     ? `${baseUrl}/invite?room_id=${roomId}&code=${inviteCode}`
@@ -120,8 +120,8 @@ export const generateInviteLink = (roomId: string, inviteCode?: string): string 
  * Joins a room by ID using Supabase
  */
 export const joinRoom = async (
-  roomId: string, 
-  userId: string, 
+  roomId: string | number, 
+  userId: number | string, 
   userName: string,
   userAvatar?: string | null
 ): Promise<boolean> => {
@@ -186,7 +186,7 @@ export const joinRoom = async (
 /**
  * Leave a room using Supabase
  */
-export const leaveRoom = async (roomId: string, userId: string): Promise<boolean> => {
+export const leaveRoom = async (roomId: string | number, userId: number | string): Promise<boolean> => {
   try {
     // Remove user from memberships
     const { error } = await supabase
