@@ -23,7 +23,7 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)]">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
@@ -35,7 +35,7 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
         <Navbar />
         <div className="max-w-md mx-auto pt-24 px-4">
           <AuthForm />
@@ -45,14 +45,14 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mt-6 mb-4 text-gray-900 dark:text-white">
+          <h1 className="text-4xl font-bold mt-6 mb-4 text-gray-900">
             Account
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-lg">
+          <p className="text-gray-600 text-lg">
             Manage your account settings and preferences
           </p>
         </div>

@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useDarkMode } from '@/contexts/DarkModeContext';
 import { useEffect } from 'react';
 
 interface CategoryItem {
@@ -20,8 +19,6 @@ interface CategorySectionProps {
 }
 
 const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemClick }) => {
-  const { isDarkMode } = useDarkMode();
-  
   // Get member counts from local storage
   useEffect(() => {
     const updateMemberCounts = () => {
@@ -82,7 +79,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
   
   return (
     <div className="mb-10">
-      <h2 className={`text-2xl font-semibold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+      <h2 className="text-2xl font-semibold mb-5 text-gray-800">
         {title}
       </h2>
       
@@ -91,30 +88,26 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
           <Card 
             key={index}
             onClick={() => onItemClick(item)}
-            className={`transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:-translate-y-1 ${
-              isDarkMode 
-                ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
-                : 'bg-white border-gray-200 hover:border-purple-200'
-            }`}
+            className="transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:-translate-y-1 bg-white border-gray-200 hover:border-purple-200"
           >
             <CardContent className="p-4 flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-medium mb-3 bg-gradient-to-br from-purple-500 to-blue-600 text-white">
                 {item.icon}
               </div>
               
-              <h3 className={`font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+              <h3 className="font-medium mb-1 text-gray-800">
                 {item.name}
               </h3>
               
               {item.description && (
-                <p className={`text-xs mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className="text-xs mb-3 text-gray-600">
                   {item.description}
                 </p>
               )}
               
               <div className="flex items-center mt-auto">
                 <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getStatusColor(item.status)}`}></span>
-                <Badge variant={isDarkMode ? "outline" : "secondary"} className="text-xs font-normal gap-1.5">
+                <Badge variant="secondary" className="text-xs font-normal gap-1.5">
                   {getStatusName(item.status)} • {item.members} {item.members === 1 ? 'member' : 'members'}
                 </Badge>
               </div>

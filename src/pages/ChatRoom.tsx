@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { useDarkMode } from '@/contexts/DarkModeContext';
 import EnhancedRoomSelector from '@/components/chat/EnhancedRoomSelector';
 import ChatRoom from '@/components/chat/ChatRoom';
 import AuthWrapper from '@/components/chat/AuthWrapper';
@@ -19,7 +18,6 @@ interface Room {
 }
 
 const ChatRoomPage = () => {
-  const { isDarkMode } = useDarkMode();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const handleLeaveRoom = () => {
@@ -27,7 +25,7 @@ const ChatRoomPage = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark bg-[#0a0a0a] text-white' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       <div className="pt-16">

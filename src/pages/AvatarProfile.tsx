@@ -5,13 +5,11 @@ import Navbar from '@/components/Navbar';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDarkMode } from '@/contexts/DarkModeContext';
 
 export default function AvatarProfile() {
   const { userProfile, updateUserProfile } = useUser();
   const { toast } = useToast();
   const [saved, setSaved] = useState(false);
-  const { isDarkMode } = useDarkMode();
 
   const handleSaveAvatar = (avatarId: number | null, customImage: string | null) => {
     // Save to userProfile
@@ -35,7 +33,7 @@ export default function AvatarProfile() {
   };
   
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <Navbar />
       
       <div className="container max-w-4xl mx-auto pt-24 pb-12 px-4">
