@@ -1,62 +1,80 @@
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import Features from '@/components/Features';
-import HowItWorks from '@/components/HowItWorks';
-import Testimonials from '@/components/Testimonials';
-import Newsletter from '@/components/Newsletter';
-import Footer from '@/components/Footer';
-import SimpleAuth from '@/components/auth/SimpleAuth';
+import React, { useEffect } from "react";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import HumanoidSection from "@/components/HumanoidSection";
+import SpecsSection from "@/components/SpecsSection";
+import DetailsSection from "@/components/DetailsSection";
+import ImageShowcaseSection from "@/components/ImageShowcaseSection";
+import Features from "@/components/Features";
+import Testimonials from "@/components/Testimonials";
+import Newsletter from "@/components/Newsletter";
+import MadeByHumans from "@/components/MadeByHumans";
+import Footer from "@/components/Footer";
 
 const Index = () => {
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const [showAuth, setShowAuth] = useState(false);
+  // Initialize intersection observer to detect when elements enter viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-fade-in");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    
+    const elements = document.querySelectorAll(".animate-on-scroll");
+    elements.forEach((el) => observer.observe(el));
+    
+    return () => {
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, []);
 
   useEffect(() => {
-    if (user && !isLoading) {
-      navigate('/codehub');
-    }
-  }, [user, isLoading, navigate]);
+    // This helps ensure smooth scrolling for the anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        const targetId = this.getAttribute('href')?.substring(1);
+        if (!targetId) return;
+        
+        const targetElement = document.getElementById(targetId);
+        if (!targetElement) return;
+        
+        // Increased offset to account for mobile nav
+        const offset = window.innerWidth < 768 ? 100 : 80;
+        
+        window.scrollTo({
+          top: targetElement.offsetTop - offset,
+          behavior: 'smooth'
+        });
+      });
+    });
+  }, []);
 
-  const handleAuthSuccess = () => {
-    navigate('/codehub');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user && showAuth) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <SimpleAuth onSuccess={handleAuthSuccess} />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <Hero onSignIn={() => setShowAuth(true)} />
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="space-y-4 sm:space-y-8"> {/* Reduced space on mobile */}
+        <Hero />
+        <HumanoidSection />
+        <SpecsSection />
+        <DetailsSection />
+        <ImageShowcaseSection />
         <Features />
-        <HowItWorks />
         <Testimonials />
         <Newsletter />
-        <Footer />
-      </div>
-    );
-  }
-
-  return null;
+        <MadeByHumans />
+      </main>
+      <Footer />
+    </div>
+  );
 };
 
 export default Index;

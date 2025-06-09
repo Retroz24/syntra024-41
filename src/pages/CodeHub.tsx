@@ -94,6 +94,8 @@ const CodeHub = () => {
   // State for managing notifications
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<{ name: string; id: string; category: string } | null>(null);
+  const [joinRoomOpen, setJoinRoomOpen] = useState(false);
   const [memberCounts, setMemberCounts] = useState<{ [key: string]: number }>({});
   const [userMemberships, setUserMemberships] = useState<Set<string>>(new Set());
   
@@ -297,109 +299,29 @@ const CodeHub = () => {
       return;
     }
 
-    try {
-      // Check if room exists
-      const { data: roomData, error: roomError } = await supabase
+    // If user is already a member, go directly to chat
+    if (item.isUserMember) {
+      // Find the room ID
+      const { data: roomData } = await supabase
         .from('rooms')
-        .select('id, name, max_members')
+        .select('id')
         .ilike('name', item.name)
         .single();
 
-      if (roomError && roomError.code === 'PGRST116') {
-        // Room doesn't exist, create it
-        const slug = item.name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        
-        // Generate invite code
-        const { data: inviteCodeData, error: codeError } = await supabase
-          .rpc('generate_invite_code');
-        
-        if (codeError) throw codeError;
-
-        const { data: newRoom, error: createError } = await supabase
-          .from('rooms')
-          .insert({
-            name: item.name,
-            slug,
-            icon_name: item.name.toLowerCase(),
-            description: `Discussion room for ${item.name}`,
-            status: 'active',
-            max_members: 50,
-            invite_code: inviteCodeData
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-
-        // Add user as member
-        const { error: membershipError } = await supabase
-          .from('memberships')
-          .insert({
-            user_id: authUser.user.id,
-            room_id: newRoom.id
-          });
-
-        if (membershipError) throw membershipError;
-
-        toast({
-          title: "Room created and joined!",
-          description: `You've created and joined ${item.name}`,
-        });
-
-        navigate(`/chat?roomId=${newRoom.id}`);
-        return;
-      }
-
-      if (roomError) throw roomError;
-
-      // If user is already a member, go directly to chat
-      if (item.isUserMember) {
+      if (roomData) {
         navigate(`/chat?roomId=${roomData.id}`);
         return;
       }
-
-      // Check if room is at capacity
-      const { count, error: countError } = await supabase
-        .from('memberships')
-        .select('*', { count: 'exact', head: true })
-        .eq('room_id', roomData.id);
-
-      if (countError) throw countError;
-
-      if (count && count >= roomData.max_members) {
-        toast({
-          title: "Room is full",
-          description: "This room has reached its maximum capacity",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Add user to the room
-      const { error: joinError } = await supabase
-        .from('memberships')
-        .insert({
-          user_id: authUser.user.id,
-          room_id: roomData.id
-        });
-
-      if (joinError) throw joinError;
-
-      toast({
-        title: "Joined successfully!",
-        description: `You've joined ${item.name}`,
-      });
-
-      navigate(`/chat?roomId=${roomData.id}`);
-
-    } catch (error: any) {
-      console.error('Error handling room click:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to join room",
-        variant: "destructive"
-      });
     }
+
+    // Otherwise, show join dialog
+    const roomId = Math.floor(Math.random() * 10000).toString();
+    setSelectedRoom({
+      name: item.name,
+      id: roomId,
+      category: item.name
+    });
+    setJoinRoomOpen(true);
   };
 
   // Generate invite link
@@ -536,6 +458,15 @@ const CodeHub = () => {
             open={createRoomOpen}
             onOpenChange={setCreateRoomOpen}
           />
+          {selectedRoom && (
+            <RoomJoinDialog
+              open={joinRoomOpen}
+              onOpenChange={setJoinRoomOpen}
+              roomName={selectedRoom.name}
+              roomId={selectedRoom.id}
+              category={selectedRoom.category}
+            />
+          )}
         </div>
       )}
     </AuthWrapper>
