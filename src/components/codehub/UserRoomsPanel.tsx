@@ -26,43 +26,6 @@ export default function UserRoomsPanel() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      fetchUserRooms();
-      
-      // Set up real-time subscription for membership changes
-      const membershipChannel = supabase
-        .channel('user-membership-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'memberships'
-          },
-          () => {
-            fetchUserRooms();
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'rooms'
-          },
-          () => {
-            fetchUserRooms();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(membershipChannel);
-      };
-    }
-  }, [user]);
-
   const fetchUserRooms = async () => {
     if (!user) return;
 
@@ -137,6 +100,43 @@ export default function UserRoomsPanel() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserRooms();
+      
+      // Set up real-time subscription for membership changes
+      const membershipChannel = supabase
+        .channel('user-membership-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'memberships'
+          },
+          () => {
+            fetchUserRooms();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'rooms'
+          },
+          () => {
+            fetchUserRooms();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(membershipChannel);
+      };
+    }
+  }, [user]);
 
   const handleInvite = async (room: UserRoom) => {
     const inviteLink = `${window.location.origin}/invite?room_id=${room.id}&code=${room.invite_code}`;
