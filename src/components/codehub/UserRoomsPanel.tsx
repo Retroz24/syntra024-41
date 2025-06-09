@@ -229,7 +229,7 @@ export default function UserRoomsPanel() {
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-sm">{room.name}</h4>
                     {room.isCreator && (
-                      <Crown className="h-3 w-3 text-yellow-500" title="Room Creator" />
+                      <Crown className="h-3 w-3 text-yellow-500" />
                     )}
                   </div>
                   <p className="text-xs text-gray-600">{room.description}</p>

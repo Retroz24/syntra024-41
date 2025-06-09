@@ -145,13 +145,13 @@ const CodeHub = () => {
 
   const fetchUserMemberships = async () => {
     try {
-      const { user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      const { data: authUser, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser.user) return;
 
       const { data: memberships, error } = await supabase
         .from('memberships')
         .select('room_id, rooms(name)')
-        .eq('user_id', user.user.id);
+        .eq('user_id', authUser.user.id);
 
       if (error) throw error;
 
@@ -289,8 +289,8 @@ const CodeHub = () => {
 
   // Handle room selection and joining
   const handleItemClick = async (item: { name: string; isUserMember?: boolean }) => {
-    const { user } = await supabase.auth.getUser();
-    if (!user.user) {
+    const { data: authUser, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser.user) {
       toast({
         title: "Authentication required",
         description: "Please sign in to join a room",
