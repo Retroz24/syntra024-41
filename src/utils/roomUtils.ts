@@ -43,11 +43,16 @@ export const createRoom = async (
   userAvatar?: string | null
 ): Promise<RoomData | null> => {
   try {
+    console.log('Creating room:', { name, description, category, userId });
+    
     // Generate invite code
     const { data: inviteCodeData, error: codeError } = await supabase
       .rpc('generate_invite_code');
     
-    if (codeError) throw codeError;
+    if (codeError) {
+      console.error('Error generating invite code:', codeError);
+      throw codeError;
+    }
 
     const slug = name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     
@@ -66,7 +71,12 @@ export const createRoom = async (
       .select()
       .single();
 
-    if (roomError) throw roomError;
+    if (roomError) {
+      console.error('Error creating room:', roomError);
+      throw roomError;
+    }
+
+    console.log('Room created successfully:', roomData);
 
     // Add creator as first member with admin privileges
     const { error: membershipError } = await supabase
@@ -76,7 +86,12 @@ export const createRoom = async (
         room_id: roomData.id
       });
 
-    if (membershipError) throw membershipError;
+    if (membershipError) {
+      console.error('Error adding creator to room:', membershipError);
+      throw membershipError;
+    }
+
+    console.log('Creator added to room membership');
 
     const room: RoomData = {
       id: roomData.id,
@@ -126,6 +141,8 @@ export const isUserMemberOfRoom = async (
   userId: string
 ): Promise<boolean> => {
   try {
+    console.log('Checking if user is member:', { roomId, userId });
+    
     const { data, error } = await supabase
       .from('memberships')
       .select('id')
@@ -133,8 +150,14 @@ export const isUserMemberOfRoom = async (
       .eq('room_id', roomId)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
-    return !!data;
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error checking membership:', error);
+      throw error;
+    }
+    
+    const isMember = !!data;
+    console.log('User membership status:', isMember);
+    return isMember;
   } catch (error) {
     console.error('Error checking membership:', error);
     return false;
@@ -151,9 +174,12 @@ export const joinRoom = async (
   userAvatar?: string | null
 ): Promise<boolean> => {
   try {
+    console.log('Attempting to join room:', { roomId, userId, userName });
+    
     // Check if user is already a member
     const isMember = await isUserMemberOfRoom(roomId, userId);
     if (isMember) {
+      console.log('User is already a member of this room');
       toast.info('You are already a member of this room');
       return true;
     }
@@ -166,9 +192,12 @@ export const joinRoom = async (
       .single();
 
     if (roomError || !roomData) {
+      console.error('Room not found:', roomError);
       toast.error('Room not found');
       return false;
     }
+
+    console.log('Room found:', roomData);
 
     // Check if room is at max capacity
     const { count, error: countError } = await supabase
@@ -176,7 +205,12 @@ export const joinRoom = async (
       .select('*', { count: 'exact', head: true })
       .eq('room_id', roomId);
 
-    if (countError) throw countError;
+    if (countError) {
+      console.error('Error counting members:', countError);
+      throw countError;
+    }
+
+    console.log('Current member count:', count);
 
     if (count && count >= roomData.max_members) {
       toast.error('This room is full');
@@ -191,8 +225,12 @@ export const joinRoom = async (
         room_id: roomId
       });
 
-    if (joinError) throw joinError;
+    if (joinError) {
+      console.error('Error joining room:', joinError);
+      throw joinError;
+    }
 
+    console.log('Successfully joined room');
     toast.success('Joined room successfully!');
     return true;
   } catch (error) {
@@ -225,9 +263,6 @@ export const leaveRoom = async (roomId: string, userId: string): Promise<boolean
   }
 };
 
-/**
- * Get room details with member count
- */
 export const getRoomDetails = async (roomId: string): Promise<RoomData | null> => {
   try {
     const { data: roomData, error: roomError } = await supabase

@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Share, MessageCircle, Crown, Clock } from 'lucide-react';
+import { Users, Share, MessageCircle, Crown, Clock, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +21,7 @@ interface UserRoom {
 
 export default function UserRoomsPanel() {
   const [userRooms, setUserRooms] = useState<UserRoom[]>([]);
+  const [totalRoomsJoined, setTotalRoomsJoined] = useState(0);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -39,9 +39,11 @@ export default function UserRoomsPanel() {
           {
             event: '*',
             schema: 'public',
-            table: 'memberships'
+            table: 'memberships',
+            filter: `user_id=eq.${user.id}`
           },
-          () => {
+          (payload) => {
+            console.log('Membership change detected:', payload);
             fetchUserRooms();
           }
         )
@@ -52,7 +54,8 @@ export default function UserRoomsPanel() {
             schema: 'public',
             table: 'rooms'
           },
-          () => {
+          (payload) => {
+            console.log('Room change detected:', payload);
             fetchUserRooms();
           }
         )
@@ -68,6 +71,8 @@ export default function UserRoomsPanel() {
     if (!user) return;
 
     try {
+      console.log('Fetching user rooms for user:', user.id);
+      
       // Get rooms user is a member of with join timestamp
       const { data: membershipData, error: membershipError } = await supabase
         .from('memberships')
@@ -86,7 +91,13 @@ export default function UserRoomsPanel() {
         .eq('user_id', user.id)
         .order('joined_at', { ascending: false });
 
-      if (membershipError) throw membershipError;
+      if (membershipError) {
+        console.error('Error fetching memberships:', membershipError);
+        throw membershipError;
+      }
+
+      console.log('Membership data:', membershipData);
+      setTotalRoomsJoined(membershipData?.length || 0);
 
       // Get member counts for each room and check if user is creator
       const roomsWithCounts = await Promise.all(
@@ -129,7 +140,9 @@ export default function UserRoomsPanel() {
         })
       );
 
-      setUserRooms(roomsWithCounts.filter(room => room !== null) as UserRoom[]);
+      const validRooms = roomsWithCounts.filter(room => room !== null) as UserRoom[];
+      console.log('Valid rooms:', validRooms);
+      setUserRooms(validRooms);
     } catch (error) {
       console.error('Error fetching user rooms:', error);
       toast({
@@ -160,6 +173,7 @@ export default function UserRoomsPanel() {
   };
 
   const handleJoinChat = (room: UserRoom) => {
+    console.log('Joining chat for room:', room.id);
     navigate(`/chat?roomId=${room.id}`);
   };
 
@@ -218,7 +232,10 @@ export default function UserRoomsPanel() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">My Rooms</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Hash className="h-4 w-4" />
+            My Rooms
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">Loading...</p>
@@ -230,14 +247,25 @@ export default function UserRoomsPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">My Rooms</CardTitle>
+        <CardTitle className="text-lg flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Hash className="h-4 w-4" />
+            My Rooms
+          </div>
+          <Badge variant="secondary" className="ml-2">
+            {totalRoomsJoined} joined
+          </Badge>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {userRooms.length === 0 ? (
-          <p className="text-sm text-gray-500">You haven't joined any rooms yet.</p>
+          <div className="text-center py-4">
+            <p className="text-sm text-gray-500 mb-2">You haven't joined any rooms yet.</p>
+            <p className="text-xs text-gray-400">Join a room from the categories above to get started!</p>
+          </div>
         ) : (
           userRooms.map(room => (
-            <div key={room.id} className="border rounded-lg p-3 space-y-2">
+            <div key={room.id} className="border rounded-lg p-3 space-y-2 hover:bg-gray-50 transition-colors">
               <div className="flex items-center space-x-2">
                 <span className="text-lg">
                   {getIconForLanguage(room.icon_name)}
@@ -246,7 +274,7 @@ export default function UserRoomsPanel() {
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-sm">{room.name}</h4>
                     {room.isCreator && (
-                      <Crown className="h-3 w-3 text-yellow-500" />
+                      <Crown className="h-3 w-3 text-yellow-500" title="Room Creator" />
                     )}
                     <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded">
                       Joined
