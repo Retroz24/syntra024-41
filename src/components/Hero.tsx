@@ -5,8 +5,8 @@ import LottieAnimation from "./LottieAnimation";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import AuthForm from "./auth/AuthForm";
 import { useAuth } from "@/contexts/AuthContext";
+import SimpleAuth from "./auth/SimpleAuth";
 
 const Hero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -135,24 +135,51 @@ const Hero = () => {
               className="flex flex-col sm:flex-row gap-4 opacity-0 animate-fade-in" 
               style={{ animationDelay: "0.7s" }}
             >
-              <Link 
-                to="/ai-playground" 
-                className="flex items-center justify-center group w-full sm:w-auto text-center" 
-                style={{
-                  backgroundColor: '#FE5C02',
-                  borderRadius: '1440px',
-                  boxSizing: 'border-box',
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  lineHeight: '20px',
-                  padding: '16px 24px',
-                  border: '1px solid white',
-                }}
-              >
-                Get Started
-                <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+              {!user ? (
+                <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
+                  <DialogTrigger asChild>
+                    <button 
+                      className="flex items-center justify-center group w-full sm:w-auto text-center" 
+                      style={{
+                        backgroundColor: '#FE5C02',
+                        borderRadius: '1440px',
+                        boxSizing: 'border-box',
+                        color: '#FFFFFF',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        lineHeight: '20px',
+                        padding: '16px 24px',
+                        border: '1px solid white',
+                      }}
+                    >
+                      Get Started
+                      <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md [&>button]:hidden">
+                    <SimpleAuth onSuccess={handleAuthSuccess} />
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <Link 
+                  to="/codehub" 
+                  className="flex items-center justify-center group w-full sm:w-auto text-center" 
+                  style={{
+                    backgroundColor: '#FE5C02',
+                    borderRadius: '1440px',
+                    boxSizing: 'border-box',
+                    color: '#FFFFFF',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    padding: '16px 24px',
+                    border: '1px solid white',
+                  }}
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              )}
 
               {!user ? (
                 <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
@@ -163,7 +190,7 @@ const Hero = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md [&>button]:hidden">
-                    <AuthForm onSuccess={handleAuthSuccess} />
+                    <SimpleAuth onSuccess={handleAuthSuccess} />
                   </DialogContent>
                 </Dialog>
               ) : (

@@ -1,4 +1,3 @@
-// Import necessary components and hooks
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/codehub/HeroSection';
@@ -15,10 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
-import { RoomJoinDialog } from "@/components/codehub/RoomJoinDialog";
 import { supabase } from '@/integrations/supabase/client';
+import { createRoom, joinRoom } from '@/utils/roomUtils';
 
-// Define expanded data outside of the component
 export const techTopicsData = [
   { name: 'React', icon: '⚛️', description: 'Build interactive UIs', status: 'active' as const, members: 0 },
   { name: 'JavaScript', icon: '📜', description: 'Programming language', status: 'active' as const, members: 0 },
@@ -63,7 +61,6 @@ export const dsaData = [
   { name: 'Sorting Algorithms', icon: '🔄', description: 'Element ordering', status: 'idle' as const, members: 0 },
 ];
 
-// Add new categories
 export const webDevData = [
   { name: 'HTML', icon: '🌐', description: 'Web markup language', status: 'active' as const, members: 0 },
   { name: 'CSS', icon: '🎨', description: 'Styling language', status: 'active' as const, members: 0 },
@@ -91,20 +88,15 @@ const CodeHub = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // State for managing notifications
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<{ name: string; id: string; category: string } | null>(null);
-  const [joinRoomOpen, setJoinRoomOpen] = useState(false);
   const [memberCounts, setMemberCounts] = useState<{ [key: string]: number }>({});
   const [userMemberships, setUserMemberships] = useState<Set<string>>(new Set());
   
-  // Fetch real member counts from Supabase
   useEffect(() => {
     fetchMemberCounts();
     fetchUserMemberships();
     
-    // Set up real-time subscription for membership changes
     const membershipChannel = supabase
       .channel('membership-changes')
       .on(
@@ -121,7 +113,6 @@ const CodeHub = () => {
       )
       .subscribe();
 
-    // Set up real-time subscription for room changes
     const roomChannel = supabase
       .channel('room-changes')
       .on(
@@ -194,7 +185,6 @@ const CodeHub = () => {
     }
   };
 
-  // Update category data with real member counts and membership status
   const updateCategoryWithMemberCounts = (items: any[]) => {
     return items.map(item => {
       const memberCount = memberCounts[item.name.toLowerCase()] || 0;
@@ -210,7 +200,6 @@ const CodeHub = () => {
     });
   };
 
-  // Handle notification actions
   const handleMarkRead = (id: string) => {
     setNotifications(prev => 
       prev.map(item => item.id === id ? { ...item, read: true } : item)
@@ -218,7 +207,6 @@ const CodeHub = () => {
   };
   
   const handleAccept = (id: string) => {
-    // Find the notification
     const notification = notifications.find(n => n.id === id);
     if (notification && notification.roomId) {
       toast({
@@ -226,7 +214,6 @@ const CodeHub = () => {
         description: `You've accepted the request and joined ${notification.roomName || 'the room'}`,
       });
       
-      // Navigate to the room
       navigate(`/chat?roomId=${notification.roomId}`);
     } else {
       toast({
@@ -235,7 +222,6 @@ const CodeHub = () => {
       });
     }
     
-    // Remove the notification
     setNotifications(prev => prev.filter(item => item.id !== id));
   };
   
@@ -251,17 +237,50 @@ const CodeHub = () => {
     setNotifications([]);
   };
 
-  // Handle room creation
-  const handleCreateRoom = () => {
-    setCreateRoomOpen(true);
+  const handleCreateRoom = async (roomData: {
+    name: string;
+    description: string;
+    category: string;
+    language?: string;
+    maxMembers?: number;
+  }) => {
+    const { data: authUser } = await supabase.auth.getUser();
+    if (!authUser.user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create a room",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const room = await createRoom(
+      roomData.name,
+      roomData.description,
+      roomData.category,
+      roomData.language || '',
+      roomData.maxMembers || 10,
+      'public',
+      authUser.user.id,
+      userProfile.username || authUser.user.email || 'Unknown',
+      null
+    );
+
+    if (room) {
+      setCreateRoomOpen(false);
+      toast({
+        title: "Room created",
+        description: `Successfully created ${room.name}`,
+      });
+      fetchMemberCounts();
+      fetchUserMemberships();
+    }
   };
 
-  // Handle joining by code
   const handleJoinByCode = () => {
     setJoinByCodeOpen(true);
   };
 
-  // Handle random matching
   const handleRandomMatch = () => {
     const allItems = [
       ...updateCategoryWithMemberCounts(techTopicsData),
@@ -282,12 +301,10 @@ const CodeHub = () => {
     }, 1000);
   };
 
-  // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
-  // Handle room selection and joining
   const handleItemClick = async (item: { name: string; isUserMember?: boolean }) => {
     const { data: authUser, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser.user) {
@@ -299,9 +316,7 @@ const CodeHub = () => {
       return;
     }
 
-    // If user is already a member, go directly to chat
     if (item.isUserMember) {
-      // Find the room ID
       const { data: roomData } = await supabase
         .from('rooms')
         .select('id')
@@ -314,22 +329,46 @@ const CodeHub = () => {
       }
     }
 
-    // Otherwise, show join dialog
-    const roomId = Math.floor(Math.random() * 10000).toString();
-    setSelectedRoom({
-      name: item.name,
-      id: roomId,
-      category: item.name
-    });
-    setJoinRoomOpen(true);
+    const { data: existingRoom } = await supabase
+      .from('rooms')
+      .select('id, name')
+      .ilike('name', item.name)
+      .single();
+
+    if (existingRoom) {
+      const success = await joinRoom(
+        existingRoom.id,
+        authUser.user.id,
+        userProfile.username || authUser.user.email || 'Unknown',
+        null
+      );
+
+      if (success) {
+        navigate(`/chat?roomId=${existingRoom.id}`);
+        fetchMemberCounts();
+        fetchUserMemberships();
+      }
+    } else {
+      const room = await createRoom(
+        item.name,
+        item.description || `Discussion about ${item.name}`,
+        item.name.toLowerCase(),
+        '',
+        10,
+        'public',
+        authUser.user.id,
+        userProfile.username || authUser.user.email || 'Unknown',
+        null
+      );
+
+      if (room) {
+        navigate(`/chat?roomId=${room.id}`);
+        fetchMemberCounts();
+        fetchUserMemberships();
+      }
+    }
   };
 
-  // Generate invite link
-  const generateInviteLink = (roomId: string) => {
-    return `${window.location.origin}/join/${roomId}`;
-  };
-
-  // Filtered topics based on search query with updated member counts
   const filteredTechTopics = updateCategoryWithMemberCounts(techTopicsData).filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -367,7 +406,6 @@ const CodeHub = () => {
           <Navbar />
           
           <div className="max-w-7xl mx-auto px-4 py-16">
-            {/* Header with notifications */}
             <div className="flex justify-between items-center mb-6 mt-8">
               <h1 className="text-3xl font-bold">CodeHub</h1>
               <div className="flex items-center gap-4">
@@ -393,15 +431,13 @@ const CodeHub = () => {
               </div>
             </div>
 
-            {/* Hero section */}
             <HeroSection
               onSearch={handleSearch}
-              onCreateRoom={handleCreateRoom}
+              onCreateRoom={() => setCreateRoomOpen(true)}
               onJoinByCode={() => setJoinByCodeOpen(true)}
               onRandomMatch={handleRandomMatch}
             />
 
-            {/* Category sections */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
               <div className="lg:col-span-2">
                 <CategorySection
@@ -441,7 +477,6 @@ const CodeHub = () => {
                 />
               </div>
               
-              {/* Sidebar content */}
               <div className="space-y-6">
                 <MiniProfile username={userProfile.username !== 'guest' ? userProfile.username : undefined} />
                 <UserRoomsPanel />
@@ -449,7 +484,6 @@ const CodeHub = () => {
             </div>
           </div>
 
-          {/* Dialogs */}
           <JoinByCodeDialog 
             open={joinByCodeOpen} 
             onOpenChange={setJoinByCodeOpen} 
@@ -457,16 +491,8 @@ const CodeHub = () => {
           <CreateRoomDialog
             open={createRoomOpen}
             onOpenChange={setCreateRoomOpen}
+            onCreateRoom={handleCreateRoom}
           />
-          {selectedRoom && (
-            <RoomJoinDialog
-              open={joinRoomOpen}
-              onOpenChange={setJoinRoomOpen}
-              roomName={selectedRoom.name}
-              roomId={selectedRoom.id}
-              category={selectedRoom.category}
-            />
-          )}
         </div>
       )}
     </AuthWrapper>
