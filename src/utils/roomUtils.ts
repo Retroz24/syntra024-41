@@ -25,10 +25,11 @@ export interface RoomData {
   inviteCode?: string;
   createdAt: string;
   createdBy?: string;
+  isAdmin?: boolean;
 }
 
 /**
- * Creates a new study room using Supabase
+ * Creates a new study room using Supabase with creator as admin
  */
 export const createRoom = async (
   name: string,
@@ -48,7 +49,7 @@ export const createRoom = async (
     
     if (codeError) throw codeError;
 
-    const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
+    const slug = name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     
     // Create room in Supabase
     const { data: roomData, error: roomError } = await supabase
@@ -58,7 +59,7 @@ export const createRoom = async (
         slug,
         icon_name: category.toLowerCase(),
         description,
-        status: 'idle',
+        status: 'active',
         max_members: maxMembers,
         invite_code: inviteCodeData
       })
@@ -67,7 +68,7 @@ export const createRoom = async (
 
     if (roomError) throw roomError;
 
-    // Add creator as first member
+    // Add creator as first member with admin privileges
     const { error: membershipError } = await supabase
       .from('memberships')
       .insert({
@@ -95,6 +96,7 @@ export const createRoom = async (
       inviteCode: inviteCodeData,
       createdAt: roomData.created_at,
       createdBy: userName,
+      isAdmin: true
     };
     
     toast.success('Room created successfully!');
@@ -117,6 +119,29 @@ export const generateInviteLink = (roomId: string, inviteCode?: string): string 
 };
 
 /**
+ * Checks if user is already a member of a room
+ */
+export const isUserMemberOfRoom = async (
+  roomId: string,
+  userId: string
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('memberships')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('room_id', roomId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return !!data;
+  } catch (error) {
+    console.error('Error checking membership:', error);
+    return false;
+  }
+};
+
+/**
  * Joins a room by ID using Supabase
  */
 export const joinRoom = async (
@@ -126,6 +151,13 @@ export const joinRoom = async (
   userAvatar?: string | null
 ): Promise<boolean> => {
   try {
+    // Check if user is already a member
+    const isMember = await isUserMemberOfRoom(roomId, userId);
+    if (isMember) {
+      toast.info('You are already a member of this room');
+      return true;
+    }
+
     // Check if room exists and get details
     const { data: roomData, error: roomError } = await supabase
       .from('rooms')
@@ -136,19 +168,6 @@ export const joinRoom = async (
     if (roomError || !roomData) {
       toast.error('Room not found');
       return false;
-    }
-
-    // Check if user is already a member
-    const { data: existingMembership } = await supabase
-      .from('memberships')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('room_id', roomId)
-      .single();
-
-    if (existingMembership) {
-      toast.info('You are already a member of this room');
-      return true;
     }
 
     // Check if room is at max capacity
@@ -203,5 +222,44 @@ export const leaveRoom = async (roomId: string, userId: string): Promise<boolean
     console.error('Error leaving room:', error);
     toast.error('Failed to leave room');
     return false;
+  }
+};
+
+/**
+ * Get room details with member count
+ */
+export const getRoomDetails = async (roomId: string): Promise<RoomData | null> => {
+  try {
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('id', roomId)
+      .single();
+
+    if (roomError) throw roomError;
+
+    // Get member count
+    const { count, error: countError } = await supabase
+      .from('memberships')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId);
+
+    if (countError) throw countError;
+
+    return {
+      id: roomData.id,
+      name: roomData.name,
+      description: roomData.description,
+      category: roomData.icon_name,
+      maxMembers: roomData.max_members,
+      currentMembers: count || 0,
+      members: [],
+      type: 'public',
+      inviteCode: roomData.invite_code,
+      createdAt: roomData.created_at
+    };
+  } catch (error) {
+    console.error('Error getting room details:', error);
+    return null;
   }
 };

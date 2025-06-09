@@ -97,10 +97,12 @@ const CodeHub = () => {
   const [selectedRoom, setSelectedRoom] = useState<{ name: string; id: string; category: string } | null>(null);
   const [joinRoomOpen, setJoinRoomOpen] = useState(false);
   const [memberCounts, setMemberCounts] = useState<{ [key: string]: number }>({});
+  const [userMemberships, setUserMemberships] = useState<Set<string>>(new Set());
   
   // Fetch real member counts from Supabase
   useEffect(() => {
     fetchMemberCounts();
+    fetchUserMemberships();
     
     // Set up real-time subscription for membership changes
     const membershipChannel = supabase
@@ -114,14 +116,56 @@ const CodeHub = () => {
         },
         () => {
           fetchMemberCounts();
+          fetchUserMemberships();
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for room changes
+    const roomChannel = supabase
+      .channel('room-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rooms'
+        },
+        () => {
+          fetchMemberCounts();
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(membershipChannel);
+      supabase.removeChannel(roomChannel);
     };
   }, []);
+
+  const fetchUserMemberships = async () => {
+    try {
+      const { user } = await supabase.auth.getUser();
+      if (!user.user) return;
+
+      const { data: memberships, error } = await supabase
+        .from('memberships')
+        .select('room_id, rooms(name)')
+        .eq('user_id', user.user.id);
+
+      if (error) throw error;
+
+      const roomNames = new Set(
+        (memberships || [])
+          .map(m => m.rooms?.name?.toLowerCase())
+          .filter(Boolean)
+      );
+      
+      setUserMemberships(roomNames);
+    } catch (error) {
+      console.error('Error fetching user memberships:', error);
+    }
+  };
 
   const fetchMemberCounts = async () => {
     try {
@@ -150,14 +194,20 @@ const CodeHub = () => {
     }
   };
 
-  // Update category data with real member counts
+  // Update category data with real member counts and membership status
   const updateCategoryWithMemberCounts = (items: any[]) => {
-    return items.map(item => ({
-      ...item,
-      members: memberCounts[item.name.toLowerCase()] || 0,
-      status: (memberCounts[item.name.toLowerCase()] || 0) > 5 ? 'busy' as const : 
-              (memberCounts[item.name.toLowerCase()] || 0) > 0 ? 'active' as const : 'idle' as const
-    }));
+    return items.map(item => {
+      const memberCount = memberCounts[item.name.toLowerCase()] || 0;
+      const isUserMember = userMemberships.has(item.name.toLowerCase());
+      
+      return {
+        ...item,
+        members: memberCount,
+        status: memberCount > 5 ? 'busy' as const : 
+                memberCount > 0 ? 'active' as const : 'idle' as const,
+        isUserMember
+      };
+    });
   };
 
   // Handle notification actions
@@ -238,7 +288,33 @@ const CodeHub = () => {
   };
 
   // Handle room selection and joining
-  const handleItemClick = (item: { name: string }) => {
+  const handleItemClick = async (item: { name: string; isUserMember?: boolean }) => {
+    const { user } = await supabase.auth.getUser();
+    if (!user.user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to join a room",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // If user is already a member, go directly to chat
+    if (item.isUserMember) {
+      // Find the room ID
+      const { data: roomData } = await supabase
+        .from('rooms')
+        .select('id')
+        .ilike('name', item.name)
+        .single();
+
+      if (roomData) {
+        navigate(`/chat?roomId=${roomData.id}`);
+        return;
+      }
+    }
+
+    // Otherwise, show join dialog
     const roomId = Math.floor(Math.random() * 10000).toString();
     setSelectedRoom({
       name: item.name,

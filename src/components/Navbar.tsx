@@ -58,10 +58,6 @@ const Navbar = () => {
                 <span>Home</span>
               </Link>
               
-              <Link to="/ai-playground" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
-                <span>AI Playground</span>
-              </Link>
-              
               {user && (
                 <Link to="/codehub" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
                   <Lock className="w-4 h-4" />
@@ -137,9 +133,6 @@ const Navbar = () => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link to="/">Home</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/ai-playground">AI Playground</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/codehub">CodeHub</Link>

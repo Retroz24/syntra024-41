@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { CheckCircle2 } from 'lucide-react';
 
 interface CategoryItem {
   name: string;
@@ -9,6 +10,7 @@ interface CategoryItem {
   status: 'busy' | 'active' | 'idle';
   members: number;
   description?: string;
+  isUserMember?: boolean;
 }
 
 interface CategorySectionProps {
@@ -42,9 +44,17 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
           <Card 
             key={index}
             onClick={() => onItemClick(item)}
-            className="transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:-translate-y-1 bg-white border-gray-200 hover:border-purple-200"
+            className={`transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:-translate-y-1 bg-white border-gray-200 hover:border-purple-200 relative ${
+              item.isUserMember ? 'ring-2 ring-green-500 border-green-200' : ''
+            }`}
           >
             <CardContent className="p-4 flex flex-col items-center text-center">
+              {item.isUserMember && (
+                <div className="absolute top-2 right-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                </div>
+              )}
+              
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-medium mb-3 bg-gradient-to-br from-purple-500 to-blue-600 text-white">
                 {item.icon}
               </div>
@@ -65,6 +75,12 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
                   {getStatusName(item.status)} • {item.members} {item.members === 1 ? 'member' : 'members'}
                 </Badge>
               </div>
+              
+              {item.isUserMember && (
+                <div className="mt-2 text-xs text-green-600 font-medium">
+                  Joined
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

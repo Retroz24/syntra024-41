@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Share, MessageCircle } from 'lucide-react';
+import { Users, Share, MessageCircle, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,37 @@ export default function UserRoomsPanel() {
   useEffect(() => {
     if (user) {
       fetchUserRooms();
+      
+      // Set up real-time subscription for membership changes
+      const membershipChannel = supabase
+        .channel('user-membership-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'memberships'
+          },
+          () => {
+            fetchUserRooms();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'rooms'
+          },
+          () => {
+            fetchUserRooms();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(membershipChannel);
+      };
     }
   }, [user]);
 
@@ -46,14 +77,15 @@ export default function UserRoomsPanel() {
             name,
             description,
             icon_name,
-            invite_code
+            invite_code,
+            created_at
           )
         `)
         .eq('user_id', user.id);
 
       if (membershipError) throw membershipError;
 
-      // Get member counts for each room
+      // Get member counts for each room and check if user is creator
       const roomsWithCounts = await Promise.all(
         (membershipData || []).map(async (membership: any) => {
           const room = membership.rooms;
@@ -70,6 +102,17 @@ export default function UserRoomsPanel() {
             return null;
           }
 
+          // Check if user is the room creator (first member joined)
+          const { data: firstMember, error: firstMemberError } = await supabase
+            .from('memberships')
+            .select('user_id')
+            .eq('room_id', room.id)
+            .order('joined_at', { ascending: true })
+            .limit(1)
+            .single();
+
+          const isCreator = !firstMemberError && firstMember?.user_id === user.id;
+
           return {
             id: room.id,
             name: room.name,
@@ -77,7 +120,7 @@ export default function UserRoomsPanel() {
             icon_name: room.icon_name,
             invite_code: room.invite_code,
             memberCount: count || 0,
-            isCreator: false // We'll determine this separately if needed
+            isCreator
           };
         })
       );
@@ -132,6 +175,23 @@ export default function UserRoomsPanel() {
       'cpp': '⚙️',
       'csharp': '#️⃣',
       'typescript': '🔷',
+      'angular': '🅰️',
+      'vue': '💚',
+      'nodejs': '💚',
+      'express': '🚂',
+      'docker': '🐳',
+      'kubernetes': '⚙️',
+      'jenkins': '🤖',
+      'aws': '☁️',
+      'git': '📚',
+      'mongodb': '🍃',
+      'postgresql': '🐘',
+      'mysql': '🐬',
+      'redis': '🔴',
+      'cassandra': '👁️',
+      'sqlite': '🗄️',
+      'firebase': '🔥',
+      'dynamodb': '⚡',
       'code': '💻'
     };
     return iconMap[iconName?.toLowerCase()] || iconMap['code'];
@@ -166,7 +226,12 @@ export default function UserRoomsPanel() {
                   {getIconForLanguage(room.icon_name)}
                 </span>
                 <div className="flex-1">
-                  <h4 className="font-medium text-sm">{room.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-sm">{room.name}</h4>
+                    {room.isCreator && (
+                      <Crown className="h-3 w-3 text-yellow-500" title="Room Creator" />
+                    )}
+                  </div>
                   <p className="text-xs text-gray-600">{room.description}</p>
                 </div>
               </div>
