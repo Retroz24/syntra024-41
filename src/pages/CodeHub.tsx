@@ -237,46 +237,6 @@ const CodeHub = () => {
     setNotifications([]);
   };
 
-  const handleCreateRoom = async (roomData: {
-    name: string;
-    description: string;
-    category: string;
-    language?: string;
-    maxMembers?: number;
-  }) => {
-    const { data: authUser } = await supabase.auth.getUser();
-    if (!authUser.user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create a room",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const room = await createRoom(
-      roomData.name,
-      roomData.description,
-      roomData.category,
-      roomData.language || '',
-      roomData.maxMembers || 10,
-      'public',
-      authUser.user.id,
-      userProfile.username || authUser.user.email || 'Unknown',
-      null
-    );
-
-    if (room) {
-      setCreateRoomOpen(false);
-      toast({
-        title: "Room created",
-        description: `Successfully created ${room.name}`,
-      });
-      fetchMemberCounts();
-      fetchUserMemberships();
-    }
-  };
-
   const handleJoinByCode = () => {
     setJoinByCodeOpen(true);
   };
@@ -349,9 +309,21 @@ const CodeHub = () => {
         fetchUserMemberships();
       }
     } else {
+      // Find the description from the original data
+      const allCategoryItems = [
+        ...techTopicsData,
+        ...databaseData,
+        ...aiData,
+        ...dsaData,
+        ...webDevData,
+        ...devopsData
+      ];
+      const originalItem = allCategoryItems.find(cat => cat.name === item.name);
+      const description = originalItem?.description || `Discussion about ${item.name}`;
+
       const room = await createRoom(
         item.name,
-        item.description || `Discussion about ${item.name}`,
+        description,
         item.name.toLowerCase(),
         '',
         10,
@@ -491,7 +463,6 @@ const CodeHub = () => {
           <CreateRoomDialog
             open={createRoomOpen}
             onOpenChange={setCreateRoomOpen}
-            onCreateRoom={handleCreateRoom}
           />
         </div>
       )}
