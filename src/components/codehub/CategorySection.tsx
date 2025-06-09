@@ -69,7 +69,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
                 </p>
               )}
               
-              <div className="flex items-center mt-auto">
+              <div className="flex items-center mt-auto mb-2">
                 <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getStatusColor(item.status)}`}></span>
                 <Badge variant="secondary" className="text-xs font-normal gap-1.5">
                   {getStatusName(item.status)} • {item.members} {item.members === 1 ? 'member' : 'members'}
@@ -77,7 +77,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, onItemC
               </div>
               
               {item.isUserMember && (
-                <div className="mt-2 text-xs text-green-600 font-medium">
+                <div className="mt-1 text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded">
                   Joined
                 </div>
               )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/codehub/HeroSection';
@@ -276,6 +277,7 @@ const CodeHub = () => {
       return;
     }
 
+    // If user is already a member, navigate directly to the room
     if (item.isUserMember) {
       const { data: roomData } = await supabase
         .from('rooms')
@@ -289,6 +291,7 @@ const CodeHub = () => {
       }
     }
 
+    // Check if room exists
     const { data: existingRoom } = await supabase
       .from('rooms')
       .select('id, name')
@@ -296,6 +299,7 @@ const CodeHub = () => {
       .single();
 
     if (existingRoom) {
+      // Join existing room
       const success = await joinRoom(
         existingRoom.id,
         authUser.user.id,
@@ -304,12 +308,17 @@ const CodeHub = () => {
       );
 
       if (success) {
+        // Show success message and navigate
+        toast({
+          title: "Joined room",
+          description: `Successfully joined ${item.name}`,
+        });
         navigate(`/chat?roomId=${existingRoom.id}`);
         fetchMemberCounts();
         fetchUserMemberships();
       }
     } else {
-      // Find the description from the original data
+      // Create new room
       const allCategoryItems = [
         ...techTopicsData,
         ...databaseData,
@@ -334,6 +343,10 @@ const CodeHub = () => {
       );
 
       if (room) {
+        toast({
+          title: "Room created",
+          description: `Created and joined ${room.name}`,
+        });
         navigate(`/chat?roomId=${room.id}`);
         fetchMemberCounts();
         fetchUserMemberships();

@@ -136,70 +136,72 @@ const Hero = () => {
               style={{ animationDelay: "0.7s" }}
             >
               {!user ? (
-                <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
-                  <DialogTrigger asChild>
-                    <button 
-                      className="flex items-center justify-center group w-full sm:w-auto text-center" 
-                      style={{
-                        backgroundColor: '#FE5C02',
-                        borderRadius: '1440px',
-                        boxSizing: 'border-box',
-                        color: '#FFFFFF',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        lineHeight: '20px',
-                        padding: '16px 24px',
-                        border: '1px solid white',
-                      }}
-                    >
-                      Get Started
-                      <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md [&>button]:hidden">
-                    <SimpleAuth onSuccess={handleAuthSuccess} />
-                  </DialogContent>
-                </Dialog>
-              ) : (
-                <Link 
-                  to="/codehub" 
-                  className="flex items-center justify-center group w-full sm:w-auto text-center" 
-                  style={{
-                    backgroundColor: '#FE5C02',
-                    borderRadius: '1440px',
-                    boxSizing: 'border-box',
-                    color: '#FFFFFF',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    lineHeight: '20px',
-                    padding: '16px 24px',
-                    border: '1px solid white',
-                  }}
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              )}
+                <>
+                  <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button 
+                        className="flex items-center justify-center group w-full sm:w-auto text-center" 
+                        style={{
+                          backgroundColor: '#FE5C02',
+                          borderRadius: '1440px',
+                          boxSizing: 'border-box',
+                          color: '#FFFFFF',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          lineHeight: '20px',
+                          padding: '16px 24px',
+                          border: '1px solid white',
+                        }}
+                      >
+                        Get Started
+                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md [&>button]:hidden">
+                      <SimpleAuth onSuccess={handleAuthSuccess} />
+                    </DialogContent>
+                  </Dialog>
 
-              {!user ? (
-                <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
-                  <DialogTrigger asChild>
+                  <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        Access CodeHub
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md [&>button]:hidden">
+                      <SimpleAuth onSuccess={handleAuthSuccess} />
+                    </DialogContent>
+                  </Dialog>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    to="/codehub" 
+                    className="flex items-center justify-center group w-full sm:w-auto text-center" 
+                    style={{
+                      backgroundColor: '#FE5C02',
+                      borderRadius: '1440px',
+                      boxSizing: 'border-box',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      lineHeight: '20px',
+                      padding: '16px 24px',
+                      border: '1px solid white',
+                    }}
+                  >
+                    Get Started
+                    <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+
+                  <Link to="/codehub">
                     <Button variant="outline" className="flex items-center gap-2">
                       <Lock className="w-4 h-4" />
                       Access CodeHub
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md [&>button]:hidden">
-                    <SimpleAuth onSuccess={handleAuthSuccess} />
-                  </DialogContent>
-                </Dialog>
-              ) : (
-                <Link to="/codehub">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    Access CodeHub
-                  </Button>
-                </Link>
+                  </Link>
+                </>
               )}
             </div>
           </div>

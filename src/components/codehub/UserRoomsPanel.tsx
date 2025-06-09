@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Share, MessageCircle, Crown } from 'lucide-react';
+import { Users, Share, MessageCircle, Crown, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ interface UserRoom {
   invite_code: string;
   memberCount: number;
   isCreator: boolean;
+  joinedAt: string;
 }
 
 export default function UserRoomsPanel() {
@@ -67,11 +68,12 @@ export default function UserRoomsPanel() {
     if (!user) return;
 
     try {
-      // Get rooms user is a member of
+      // Get rooms user is a member of with join timestamp
       const { data: membershipData, error: membershipError } = await supabase
         .from('memberships')
         .select(`
           room_id,
+          joined_at,
           rooms (
             id,
             name,
@@ -81,7 +83,8 @@ export default function UserRoomsPanel() {
             created_at
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('joined_at', { ascending: false });
 
       if (membershipError) throw membershipError;
 
@@ -120,7 +123,8 @@ export default function UserRoomsPanel() {
             icon_name: room.icon_name,
             invite_code: room.invite_code,
             memberCount: count || 0,
-            isCreator
+            isCreator,
+            joinedAt: membership.joined_at
           };
         })
       );
@@ -197,6 +201,19 @@ export default function UserRoomsPanel() {
     return iconMap[iconName?.toLowerCase()] || iconMap['code'];
   };
 
+  const formatJoinedTime = (joinedAt: string) => {
+    const date = new Date(joinedAt);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -231,15 +248,25 @@ export default function UserRoomsPanel() {
                     {room.isCreator && (
                       <Crown className="h-3 w-3 text-yellow-500" />
                     )}
+                    <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded">
+                      Joined
+                    </span>
                   </div>
                   <p className="text-xs text-gray-600">{room.description}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Clock className="h-3 w-3 text-gray-400" />
+                    <span className="text-xs text-gray-500">
+                      {formatJoinedTime(room.joinedAt)}
+                    </span>
+                  </div>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Users className="h-3 w-3" />
-                  {room.memberCount}
+                  <span className="font-medium">{room.memberCount}</span>
+                  <span className="text-xs">members</span>
                 </Badge>
                 
                 <div className="flex gap-1">
@@ -248,6 +275,7 @@ export default function UserRoomsPanel() {
                     variant="ghost"
                     onClick={() => handleJoinChat(room)}
                     className="h-6 px-2"
+                    title="Join chat"
                   >
                     <MessageCircle className="h-3 w-3" />
                   </Button>
@@ -256,6 +284,7 @@ export default function UserRoomsPanel() {
                     variant="ghost"
                     onClick={() => handleInvite(room)}
                     className="h-6 px-2"
+                    title="Share invite link"
                   >
                     <Share className="h-3 w-3" />
                   </Button>
