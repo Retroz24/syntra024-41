@@ -31,26 +31,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate 4-digit OTP code
-    const { data: codeData, error: codeError } = await supabase
-      .rpc('generate_otp_code');
+    // Generate 6-digit OTP code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    if (codeError) {
-      console.error('Error generating OTP code:', codeError);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate OTP code" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    // Store OTP code in database with expiration
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
 
-    const otpCode = codeData;
-
-    // Store OTP code in database
     const { error: insertError } = await supabase
       .from('otp_codes')
       .insert({
-        email,
+        email: email.toLowerCase().trim(),
         code: otpCode,
+        expires_at: expiresAt.toISOString(),
+        used: false
       });
 
     if (insertError) {
@@ -61,32 +55,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send OTP via Supabase Auth (using magic link as fallback)
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
+    // Send OTP via Supabase Auth email
+    const { error: authError } = await supabase.auth.admin.generateLink({
+      type: 'signup',
+      email: email.toLowerCase().trim(),
       options: {
-        emailRedirectTo: `${req.headers.get('origin')}/auth/callback`,
         data: {
-          otp_code: otpCode
+          verification_code: otpCode
         }
       }
     });
 
     if (authError) {
       console.error('Error sending OTP via Supabase:', authError);
-      return new Response(
-        JSON.stringify({ error: "Failed to send OTP email" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      
+      // Fallback: Try using signInWithOtp
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase().trim(),
+        options: {
+          shouldCreateUser: true,
+          data: {
+            verification_code: otpCode
+          }
+        }
+      });
+
+      if (otpError) {
+        console.error('Error with OTP fallback:', otpError);
+        return new Response(
+          JSON.stringify({ error: "Failed to send verification email" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
     }
 
-    console.log(`OTP code ${otpCode} sent to ${email}`);
+    console.log(`OTP code ${otpCode} generated for ${email}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "OTP code sent to your email",
-        code: otpCode // Remove this in production
+        message: "Verification code sent to your email",
+        // Remove this in production for security
+        debug_code: otpCode
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
@@ -94,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-otp function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Internal server error" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

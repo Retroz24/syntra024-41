@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +39,30 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
     }
   };
 
+  const sendVerificationCode = async (email: string) => {
+    try {
+      const response = await fetch(`${window.location.origin}/api/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send verification code');
+      }
+
+      const data = await response.json();
+      console.log('Verification code sent:', data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error sending verification code:', error);
+      throw error;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -75,7 +98,6 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
       const trimmedEmail = email.trim().toLowerCase();
 
       if (mode === 'login') {
-        // Try to sign in
         const { data, error } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,
           password,
@@ -110,7 +132,7 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
           }, 1000);
         }
       } else {
-        // Try to sign up
+        // Registration flow
         const { data, error } = await supabase.auth.signUp({
           email: trimmedEmail,
           password,
@@ -150,12 +172,21 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
               onSuccess();
             }, 1000);
           } else {
-            // Need email verification
-            setStep('verification');
-            toast({
-              title: "Check Your Email",
-              description: "We sent a verification code to your email address.",
-            });
+            // Send verification code via our edge function
+            try {
+              await sendVerificationCode(trimmedEmail);
+              setStep('verification');
+              toast({
+                title: "Verification Code Sent",
+                description: "Please check your email for a 6-digit verification code.",
+              });
+            } catch (error: any) {
+              toast({
+                title: "Error",
+                description: error.message || "Failed to send verification code. Please try again.",
+                variant: "destructive",
+              });
+            }
           }
         }
       }
@@ -184,32 +215,68 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
-        token: code,
-        type: 'signup'
-      });
+      const trimmedEmail = email.trim().toLowerCase();
 
-      if (error) {
+      // Verify OTP code in database
+      const { data: otpData, error: otpError } = await supabase
+        .from('otp_codes')
+        .select('*')
+        .eq('email', trimmedEmail)
+        .eq('code', code)
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (otpError || !otpData) {
         toast({
-          title: "Verification Failed",
-          description: "Invalid or expired code. Please try again.",
+          title: "Invalid Code",
+          description: "The code you entered is invalid or has expired. Please try again.",
           variant: "destructive",
         });
         return;
       }
 
-      if (data.user) {
-        setIsSuccess(true);
-        toast({
-          title: "Success!",
-          description: "Email verified! Welcome to Syntra.",
+      // Mark OTP as used
+      await supabase
+        .from('otp_codes')
+        .update({ used: true })
+        .eq('id', otpData.id);
+
+      // Confirm the user's email
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        otpData.user_id || '',
+        { email_confirm: true }
+      );
+
+      if (updateError) {
+        // Fallback: Try to sign in the user directly
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password: password,
         });
-        
-        setTimeout(() => {
-          onSuccess();
-        }, 1000);
+
+        if (signInError) {
+          toast({
+            title: "Verification Failed",
+            description: "Failed to complete verification. Please try logging in.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
+
+      setIsSuccess(true);
+      toast({
+        title: "Success!",
+        description: "Email verified! Welcome to Syntra.",
+      });
+      
+      setTimeout(() => {
+        onSuccess();
+      }, 1000);
+
     } catch (error: any) {
       console.error('Verification error:', error);
       toast({
