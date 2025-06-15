@@ -1,21 +1,31 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, Mail, ArrowLeft } from 'lucide-react';
 
 interface SimpleAuthProps {
   onSuccess: () => void;
 }
 
 export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
+  const [step, setStep] = useState<'auth' | 'verification'>('auth');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const cleanupAuthState = () => {
     try {
@@ -30,20 +40,22 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
     }
   };
 
-  const handleAuth = async () => {
-    if (code.length !== 4) {
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim() || !validateEmail(email.trim())) {
       toast({
-        title: "Invalid Code",
-        description: "Please enter a complete 4-digit code",
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
     }
 
-    if (!/^\d{4}$/.test(code)) {
+    if (!password.trim() || password.length < 6) {
       toast({
-        title: "Invalid Code",
-        description: "Code must contain only numbers",
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long",
         variant: "destructive",
       });
       return;
@@ -52,11 +64,6 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
     setIsLoading(true);
 
     try {
-      // Use the 4-digit code as both email and password for simplicity
-      const email = `user${code}@syntra.local`;
-      const password = `syntra${code}`;
-
-      // Clean up any existing auth state first
       cleanupAuthState();
       
       try {
@@ -65,64 +72,149 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
         console.warn('Error during cleanup signout:', err);
       }
 
-      // First try to sign in
-      let { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const trimmedEmail = email.trim().toLowerCase();
 
-      // If sign in fails, try to sign up
-      if (error && error.message.includes('Invalid login credentials')) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
+      if (mode === 'login') {
+        // Try to sign in
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            toast({
+              title: "Login Failed",
+              description: "Invalid email or password. Try registering if you're new.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Login Failed",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+
+        if (data.user) {
+          setIsSuccess(true);
+          toast({
+            title: "Welcome Back!",
+            description: "You have been signed in successfully.",
+          });
+          
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
+        }
+      } else {
+        // Try to sign up
+        const { data, error } = await supabase.auth.signUp({
+          email: trimmedEmail,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
           }
         });
 
-        if (signUpError) {
-          throw signUpError;
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            toast({
+              title: "Account Exists",
+              description: "This email is already registered. Try logging in instead.",
+              variant: "destructive",
+            });
+            setMode('login');
+          } else {
+            toast({
+              title: "Registration Failed",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          return;
         }
-        
-        data = signUpData;
-        
+
+        if (data.user) {
+          if (data.user.email_confirmed_at) {
+            // User is automatically confirmed
+            setIsSuccess(true);
+            toast({
+              title: "Welcome!",
+              description: "Account created successfully! Signing you in...",
+            });
+            
+            setTimeout(() => {
+              onSuccess();
+            }, 1000);
+          } else {
+            // Need email verification
+            setStep('verification');
+            toast({
+              title: "Check Your Email",
+              description: "We sent a verification code to your email address.",
+            });
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      toast({
+        title: "Authentication Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerification = async () => {
+    if (code.length !== 6) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter the complete 6-digit verification code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: code,
+        type: 'signup'
+      });
+
+      if (error) {
         toast({
-          title: "Welcome!",
-          description: "Account created successfully! Signing you in...",
+          title: "Verification Failed",
+          description: "Invalid or expired code. Please try again.",
+          variant: "destructive",
         });
-      } else if (error) {
-        throw error;
-      } else {
-        toast({
-          title: "Welcome Back!",
-          description: "Signing you in...",
-        });
+        return;
       }
 
       if (data.user) {
-        // Store the code in localStorage for persistence
-        localStorage.setItem('syntra_auth_code', code);
         setIsSuccess(true);
+        toast({
+          title: "Success!",
+          description: "Email verified! Welcome to Syntra.",
+        });
         
-        // Small delay before calling onSuccess
         setTimeout(() => {
           onSuccess();
         }, 1000);
       }
     } catch (error: any) {
-      console.error('Authentication error:', error);
-      
-      let errorMessage = "Failed to authenticate. Please try again.";
-      if (error.message?.includes('Email not confirmed')) {
-        errorMessage = "Please check your email and confirm your account.";
-      } else if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = "Invalid code. Please check and try again.";
-      }
-      
+      console.error('Verification error:', error);
       toast({
-        title: "Authentication Failed",
-        description: errorMessage,
+        title: "Verification Failed",
+        description: "Failed to verify code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -131,8 +223,12 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && code.length === 4 && !isLoading && !isSuccess) {
-      handleAuth();
+    if (e.key === 'Enter' && !isLoading && !isSuccess) {
+      if (step === 'auth') {
+        handleAuth(e);
+      } else if (code.length === 6) {
+        handleVerification();
+      }
     }
   };
 
@@ -152,6 +248,71 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
     );
   }
 
+  if (step === 'verification') {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-2">
+            <img 
+              src="/lovable-uploads/a0743b79-faca-44ef-b81c-9ac71f0333fc.png" 
+              alt="Syntra Logo" 
+              className="h-10 w-auto" 
+            />
+          </div>
+          <CardTitle className="text-2xl font-bold">Enter Verification Code</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            We sent a 6-digit code to {email}
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={6}
+              value={code}
+              onChange={(value) => setCode(value)}
+              onKeyDown={handleKeyPress}
+              disabled={isLoading}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+          
+          <Button 
+            onClick={handleVerification} 
+            className="w-full" 
+            disabled={isLoading || code.length !== 6}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              'Verify Email'
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => setStep('auth')}
+            disabled={isLoading}
+            className="w-full text-sm"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to login
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
@@ -162,52 +323,80 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
             className="h-10 w-auto" 
           />
         </div>
-        <CardTitle className="text-2xl font-bold">Enter Access Code</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Enter your 4-digit access code to continue
+          {mode === 'login' 
+            ? 'Sign in to your Syntra account' 
+            : 'Join Syntra and start your journey'
+          }
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex justify-center">
-          <InputOTP
-            maxLength={4}
-            value={code}
-            onChange={(value) => setCode(value)}
-            onKeyDown={handleKeyPress}
-            disabled={isLoading}
+        <form onSubmit={handleAuth} className="space-y-4">
+          <div className="space-y-2">
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="Enter your email address"
+                className="pl-10"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={handleKeyPress}
+                disabled={isLoading}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handleKeyPress}
+              disabled={isLoading}
+              required
+              minLength={6}
+            />
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isLoading || !email.trim() || !password.trim()}
           >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-            </InputOTPGroup>
-          </InputOTP>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {mode === 'login' ? 'Signing In...' : 'Creating Account...'}
+              </>
+            ) : (
+              mode === 'login' ? 'Sign In' : 'Create Account'
+            )}
+          </Button>
+        </form>
+        
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
+            {mode === 'login' ? "Don't have an account?" : "Already have an account?"}
+          </p>
+          <Button
+            variant="link"
+            onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+            disabled={isLoading}
+            className="text-sm p-0 h-auto"
+          >
+            {mode === 'login' ? 'Create one here' : 'Sign in instead'}
+          </Button>
         </div>
         
-        <Button 
-          onClick={handleAuth} 
-          className="w-full" 
-          disabled={isLoading || code.length !== 4}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Authenticating...
-            </>
-          ) : (
-            'Access Syntra'
-          )}
-        </Button>
-        
-        <div className="text-center space-y-2">
-          <p className="text-xs text-muted-foreground">
-            New users will be automatically registered
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Try codes like: 1234, 5678, 9999, or any 4-digit number
-          </p>
-        </div>
+        <p className="text-xs text-center text-muted-foreground">
+          By continuing, you agree to our Terms of Service and Privacy Policy.
+        </p>
       </CardContent>
     </Card>
   );
