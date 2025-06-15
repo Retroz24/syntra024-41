@@ -13,10 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import SimpleAuth from '@/components/auth/SimpleAuth';
 
 const Navbar = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   useEffect(() => {
     // Close mobile menu when route changes
@@ -36,42 +39,106 @@ const Navbar = () => {
     return user?.email?.substring(0, 2).toUpperCase() || 'U';
   };
 
+  const handleAuthSuccess = () => {
+    setAuthDialogOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
   return (
-    <div className="fixed w-full z-50 top-4">
-      <nav className="max-w-6xl mx-auto px-4">
-        <div className="bg-white/70 backdrop-blur-md rounded-full shadow-lg border border-white/20">
-          <div className="flex justify-between items-center h-14 px-6">
-            <div className="flex items-center space-x-2">
-              <Link to="/" className="flex items-center space-x-2">
-                <img 
-                  src="/lovable-uploads/a0743b79-faca-44ef-b81c-9ac71f0333fc.png" 
-                  alt="Syntra Logo" 
-                  className="h-7 w-auto"
-                />
-                <span className="text-lg font-bold text-black">Syntra</span>
-              </Link>
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
-                <Home className="w-4 h-4" />
-                <span>Home</span>
-              </Link>
-              
-              {user && (
-                <Link to="/codehub" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
-                  <Lock className="w-4 h-4" />
-                  <span>CodeHub</span>
+    <>
+      <div className="fixed w-full z-50 top-4">
+        <nav className="max-w-6xl mx-auto px-4">
+          <div className="bg-white/70 backdrop-blur-md rounded-full shadow-lg border border-white/20">
+            <div className="flex justify-between items-center h-14 px-6">
+              <div className="flex items-center space-x-2">
+                <Link to="/" className="flex items-center space-x-2">
+                  <img 
+                    src="/lovable-uploads/a0743b79-faca-44ef-b81c-9ac71f0333fc.png" 
+                    alt="Syntra Logo" 
+                    className="h-7 w-auto"
+                  />
+                  <span className="text-lg font-bold text-black">Syntra</span>
                 </Link>
-              )}
+              </div>
               
-              {user ? (
-                <>
-                  <Link to="/profile" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
+              <div className="hidden md:flex items-center space-x-8">
+                <Link to="/" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
+                  <Home className="w-4 h-4" />
+                  <span>Home</span>
+                </Link>
+                
+                {user && (
+                  <Link to="/codehub" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
+                    <Lock className="w-4 h-4" />
+                    <span>CodeHub</span>
                   </Link>
-                  
+                )}
+                
+                {user ? (
+                  <>
+                    <Link to="/profile" className="flex items-center space-x-1.5 text-gray-700 hover:text-gray-900 transition-colors">
+                      <User className="w-4 h-4" />
+                      <span>Profile</span>
+                    </Link>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="rounded-full p-0 w-8 h-8">
+                          <Avatar className="h-8 w-8">
+                            {profile?.avatar_url ? (
+                              <AvatarImage src={profile.avatar_url} alt={profile.full_name || user.email || ""} />
+                            ) : (
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {getInitials()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Account</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile">Profile Settings</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/avatar">Edit Avatar</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={handleSignOut} 
+                          className="text-red-600"
+                          disabled={isLoading}
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          {isLoading ? 'Signing out...' : 'Sign Out'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                ) : (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setAuthDialogOpen(true)}
+                    disabled={isLoading}
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    {isLoading ? 'Loading...' : 'Sign In'}
+                  </Button>
+                )}
+              </div>
+              
+              {/* Mobile menu button */}
+              <div className="md:hidden flex items-center">
+                {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="rounded-full p-0 w-8 h-8">
@@ -87,79 +154,50 @@ const Navbar = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Account</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/profile">Profile Settings</Link>
+                        <Link to="/">Home</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/avatar">Edit Avatar</Link>
+                        <Link to="/codehub">CodeHub</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile">Profile</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={signOut} className="text-red-600">
+                      <DropdownMenuItem 
+                        onClick={handleSignOut} 
+                        className="text-red-600"
+                        disabled={isLoading}
+                      >
                         <LogOut className="w-4 h-4 mr-2" />
-                        Sign Out
+                        {isLoading ? 'Signing out...' : 'Sign Out'}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </>
-              ) : (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/">
+                ) : (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setAuthDialogOpen(true)}
+                    disabled={isLoading}
+                  >
                     <LogIn className="w-4 h-4 mr-2" />
-                    Sign In
-                  </Link>
-                </Button>
-              )}
-            </div>
-            
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="rounded-full p-0 w-8 h-8">
-                      <Avatar className="h-8 w-8">
-                        {profile?.avatar_url ? (
-                          <AvatarImage src={profile.avatar_url} alt={profile.full_name || user.email || ""} />
-                        ) : (
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link to="/">Home</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/codehub">CodeHub</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-red-600">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Sign In
-                  </Link>
-                </Button>
-              )}
+                    {isLoading ? 'Loading...' : 'Sign In'}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
-    </div>
+        </nav>
+      </div>
+
+      {/* Auth Dialog */}
+      <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden">
+          <SimpleAuth onSuccess={handleAuthSuccess} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

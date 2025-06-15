@@ -5,7 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 interface SimpleAuthProps {
   onSuccess: () => void;
@@ -14,6 +14,7 @@ interface SimpleAuthProps {
 export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
 
   const cleanupAuthState = () => {
@@ -87,32 +88,41 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
         data = signUpData;
         
         toast({
-          title: "Account Created",
-          description: "New account created successfully!",
+          title: "Welcome!",
+          description: "Account created successfully! Signing you in...",
         });
       } else if (error) {
         throw error;
       } else {
         toast({
-          title: "Welcome Back",
-          description: "Signed in successfully!",
+          title: "Welcome Back!",
+          description: "Signing you in...",
         });
       }
 
       if (data.user) {
         // Store the code in localStorage for persistence
         localStorage.setItem('syntra_auth_code', code);
+        setIsSuccess(true);
         
         // Small delay before calling onSuccess
         setTimeout(() => {
           onSuccess();
-        }, 500);
+        }, 1000);
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
+      
+      let errorMessage = "Failed to authenticate. Please try again.";
+      if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "Please check your email and confirm your account.";
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Invalid code. Please check and try again.";
+      }
+      
       toast({
         title: "Authentication Failed",
-        description: error.message || "Failed to authenticate. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -121,10 +131,26 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && code.length === 4 && !isLoading) {
+    if (e.key === 'Enter' && code.length === 4 && !isLoading && !isSuccess) {
       handleAuth();
     }
   };
+
+  if (isSuccess) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <CheckCircle className="h-12 w-12 text-green-500" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-green-600">Success!</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Authentication successful. Redirecting to CodeHub...
+          </p>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -174,9 +200,14 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
           )}
         </Button>
         
-        <p className="text-xs text-center text-muted-foreground">
-          New users will be automatically registered
-        </p>
+        <div className="text-center space-y-2">
+          <p className="text-xs text-muted-foreground">
+            New users will be automatically registered
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Try codes like: 1234, 5678, 9999, or any 4-digit number
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

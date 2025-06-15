@@ -14,7 +14,7 @@ const Hero = () => {
   const [lottieData, setLottieData] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -93,6 +93,10 @@ const Hero = () => {
       window.location.href = '/codehub';
     }, 500);
   };
+
+  const openAuthDialog = () => {
+    setAuthDialogOpen(true);
+  };
   
   return (
     <section 
@@ -137,42 +141,35 @@ const Hero = () => {
             >
               {!user ? (
                 <>
-                  <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button 
-                        className="flex items-center justify-center group w-full sm:w-auto text-center" 
-                        style={{
-                          backgroundColor: '#FE5C02',
-                          borderRadius: '1440px',
-                          boxSizing: 'border-box',
-                          color: '#FFFFFF',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          lineHeight: '20px',
-                          padding: '16px 24px',
-                          border: '1px solid white',
-                        }}
-                      >
-                        Get Started
-                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md [&>button]:hidden">
-                      <SimpleAuth onSuccess={handleAuthSuccess} />
-                    </DialogContent>
-                  </Dialog>
+                  <button 
+                    onClick={openAuthDialog}
+                    disabled={isLoading}
+                    className="flex items-center justify-center group w-full sm:w-auto text-center disabled:opacity-50" 
+                    style={{
+                      backgroundColor: '#FE5C02',
+                      borderRadius: '1440px',
+                      boxSizing: 'border-box',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      lineHeight: '20px',
+                      padding: '16px 24px',
+                      border: '1px solid white',
+                    }}
+                  >
+                    {isLoading ? 'Loading...' : 'Get Started'}
+                    <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
 
-                  <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2">
-                        <Lock className="w-4 h-4" />
-                        Access CodeHub
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md [&>button]:hidden">
-                      <SimpleAuth onSuccess={handleAuthSuccess} />
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={openAuthDialog}
+                    disabled={isLoading}
+                  >
+                    <Lock className="w-4 h-4" />
+                    Access CodeHub
+                  </Button>
                 </>
               ) : (
                 <>
@@ -191,7 +188,7 @@ const Hero = () => {
                       border: '1px solid white',
                     }}
                   >
-                    Get Started
+                    Enter CodeHub
                     <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </Link>
 
@@ -234,6 +231,13 @@ const Hero = () => {
           </div>
         </div>
       </div>
+      
+      {/* Auth Dialog */}
+      <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden">
+          <SimpleAuth onSuccess={handleAuthSuccess} />
+        </DialogContent>
+      </Dialog>
       
       <div className="hidden lg:block absolute bottom-0 left-1/4 w-64 h-64 bg-pulse-100/30 rounded-full blur-3xl -z-10 parallax" data-speed="0.05"></div>
     </section>

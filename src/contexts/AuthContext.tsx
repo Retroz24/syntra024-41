@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -355,7 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       toast({
         title: "Signed out",
-        description: "You have been successfully logged out.",
+        description: "You have been successfully signed out.",
       });
       
       // Force page refresh to ensure clean state
