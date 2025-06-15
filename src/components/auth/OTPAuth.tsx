@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 
@@ -52,12 +51,20 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send OTP');
+        // Handle non-200 responses
+        let errorMessage = 'Failed to send OTP';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If response isn't JSON, use default error
+        }
+        throw new Error(errorMessage);
       }
 
+      const data = await response.json();
+      
       setEmailSent(true);
       toast({
         title: "Code Sent!",
@@ -124,7 +131,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (otpError || !otpData) {
         toast({
@@ -141,7 +148,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         .update({ used: true })
         .eq('id', otpData.id);
 
-      // Sign in or sign up the user
+      // Try to sign in with email/OTP first
       const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
         options: {
@@ -155,6 +162,9 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: trimmedEmail,
           password: tempPassword,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          }
         });
 
         if (signUpError) {
@@ -198,6 +208,16 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
     setResendCooldown(0);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (step === 'email') {
+        handleSendOTP();
+      } else if (otpCode.length === 4) {
+        handleVerifyOTP();
+      }
+    }
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
@@ -233,6 +253,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
                   className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={handleKeyPress}
                   disabled={isLoading}
                   required
                 />
@@ -267,6 +288,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
                 maxLength={4}
                 value={otpCode}
                 onChange={(value) => setOtpCode(value)}
+                onKeyDown={handleKeyPress}
                 disabled={isLoading}
               >
                 <InputOTPGroup>

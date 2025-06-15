@@ -16,6 +16,19 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const cleanupAuthState = () => {
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.removeItem('syntra_auth_code');
+    } catch (error) {
+      console.warn('Error during cleanup:', error);
+    }
+  };
+
   const handleAuth = async () => {
     if (code.length !== 4) {
       toast({
@@ -43,10 +56,12 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
       const password = `syntra${code}`;
 
       // Clean up any existing auth state first
+      cleanupAuthState();
+      
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        console.warn('Error during cleanup:', err);
+        console.warn('Error during cleanup signout:', err);
       }
 
       // First try to sign in
@@ -106,7 +121,7 @@ export default function SimpleAuth({ onSuccess }: SimpleAuthProps) {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && code.length === 4) {
+    if (e.key === 'Enter' && code.length === 4 && !isLoading) {
       handleAuth();
     }
   };

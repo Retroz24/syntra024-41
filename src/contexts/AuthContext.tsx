@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Enhanced auth state cleanup
   const cleanupAuthState = () => {
     try {
+      // Clear all auth-related localStorage keys
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
           localStorage.removeItem(key);
@@ -45,18 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('syntra_auth_code');
       
       // Clear session storage as well
-      Object.keys(sessionStorage || {}).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          sessionStorage.removeItem(key);
-        }
-      });
+      if (typeof sessionStorage !== 'undefined') {
+        Object.keys(sessionStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      }
     } catch (error) {
       console.warn('Error cleaning up auth state:', error);
     }
   };
 
-  // Fetch user profile with retry logic
-  const fetchProfile = async (userId: string, retries = 3) => {
+  // Fetch user profile with error handling
+  const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -66,70 +69,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        if (retries > 0) {
-          console.log(`Retrying profile fetch (${retries} attempts left)`);
-          setTimeout(() => fetchProfile(userId, retries - 1), 1000);
-          return null;
-        }
         return null;
       }
 
       return data as UserProfile;
     } catch (error) {
       console.error('Profile fetch failed:', error);
-      if (retries > 0) {
-        setTimeout(() => fetchProfile(userId, retries - 1), 1000);
-      }
       return null;
     }
   };
 
-  // Enhanced auth state change handler
+  // Initialize auth state
   useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (!mounted) return;
-
-      console.log('Auth state changed:', event, currentSession?.user?.email);
-      
-      // Update session and user immediately
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user && event === 'SIGNED_IN') {
-        // Defer profile fetching to prevent deadlocks
-        setTimeout(async () => {
-          if (mounted) {
-            try {
-              const profileData = await fetchProfile(currentSession.user.id);
-              if (mounted) {
-                setProfile(profileData);
-              }
-            } catch (error) {
-              console.error('Error loading profile after sign in:', error);
-            } finally {
-              if (mounted) {
-                setIsLoading(false);
-              }
-            }
-          }
-        }, 100);
-      } else {
-        setProfile(null);
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-
-      if (!isInitialized && mounted) {
-        setIsInitialized(true);
-      }
-    });
-
-    // Get initial session
     const initializeAuth = async () => {
       try {
+        setIsLoading(true);
+        
+        // Set up auth state listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+          if (!mounted) return;
+
+          console.log('Auth state changed:', event, currentSession?.user?.email);
+          
+          // Update session and user immediately
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          if (currentSession?.user && event === 'SIGNED_IN') {
+            // Fetch profile in background without blocking
+            setTimeout(async () => {
+              if (mounted) {
+                try {
+                  const profileData = await fetchProfile(currentSession.user.id);
+                  if (mounted) {
+                    setProfile(profileData);
+                  }
+                } catch (error) {
+                  console.error('Error loading profile after sign in:', error);
+                }
+              }
+            }, 100);
+          } else if (event === 'SIGNED_OUT') {
+            setProfile(null);
+            cleanupAuthState();
+          }
+
+          if (mounted) {
+            setIsLoading(false);
+          }
+        });
+
+        // Get initial session
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -151,6 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
           setIsInitialized(true);
         }
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
@@ -164,7 +161,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
@@ -266,12 +262,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const sendOTP = async (email: string) => {
     try {
-      const response = await supabase.functions.invoke('send-otp', {
-        body: { email: email.trim().toLowerCase() }
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 
-      if (response.error) {
-        throw response.error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send OTP');
       }
 
       return { error: null };
@@ -401,12 +402,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Don't render children until auth is initialized
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       profile, 
-      isLoading: isLoading || !isInitialized, 
+      isLoading, 
       signIn, 
       signUp, 
       signOut,
