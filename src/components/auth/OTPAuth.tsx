@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 
 interface OTPAuthProps {
   onSuccess?: () => void;
@@ -19,11 +19,27 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
   const [otpCode, setOtpCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [emailSent, setEmailSent] = useState(false);
   const { toast } = useToast();
 
-  const handleSendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSendOTP = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!trimmedEmail || !validateEmail(trimmedEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -33,7 +49,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: trimmedEmail }),
       });
 
       const data = await response.json();
@@ -42,9 +58,10 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         throw new Error(data.error || 'Failed to send OTP');
       }
 
+      setEmailSent(true);
       toast({
-        title: "OTP Sent!",
-        description: `A 4-digit code has been sent to ${email}`,
+        title: "Code Sent!",
+        description: `A 4-digit code has been sent to ${trimmedEmail}`,
       });
 
       setStep('otp');
@@ -62,9 +79,10 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
       }, 1000);
 
     } catch (error: any) {
+      console.error('OTP send error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send OTP code",
+        description: error.message || "Failed to send verification code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -76,7 +94,16 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
     if (otpCode.length !== 4) {
       toast({
         title: "Invalid Code",
-        description: "Please enter a 4-digit code",
+        description: "Please enter the complete 4-digit code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!/^\d{4}$/.test(otpCode)) {
+      toast({
+        title: "Invalid Code",
+        description: "Code must contain only numbers",
         variant: "destructive",
       });
       return;
@@ -85,11 +112,13 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
     setIsLoading(true);
 
     try {
+      const trimmedEmail = email.trim().toLowerCase();
+
       // Verify OTP code in database
       const { data: otpData, error: otpError } = await supabase
         .from('otp_codes')
         .select('*')
-        .eq('email', email)
+        .eq('email', trimmedEmail)
         .eq('code', otpCode)
         .eq('used', false)
         .gt('expires_at', new Date().toISOString())
@@ -100,7 +129,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
       if (otpError || !otpData) {
         toast({
           title: "Invalid Code",
-          description: "The code you entered is invalid or has expired",
+          description: "The code you entered is invalid or has expired. Please try again.",
           variant: "destructive",
         });
         return;
@@ -114,7 +143,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
 
       // Sign in or sign up the user
       const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
-        email,
+        email: trimmedEmail,
         options: {
           shouldCreateUser: true,
         }
@@ -124,7 +153,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         // If OTP sign in fails, try creating the user with a temporary password
         const tempPassword = `temp_${otpCode}_${Date.now()}`;
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: trimmedEmail,
           password: tempPassword,
         });
 
@@ -138,12 +167,16 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         description: "You have been successfully signed in.",
       });
 
-      onSuccess?.();
+      // Small delay before calling onSuccess
+      setTimeout(() => {
+        onSuccess?.();
+      }, 500);
 
     } catch (error: any) {
+      console.error('OTP verification error:', error);
       toast({
         title: "Authentication Failed",
-        description: error.message || "Failed to verify OTP code",
+        description: error.message || "Failed to verify code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -154,12 +187,15 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
   const handleResendOTP = () => {
     if (resendCooldown > 0) return;
     setOtpCode('');
-    handleSendOTP({ preventDefault: () => {} } as React.FormEvent);
+    setEmailSent(false);
+    handleSendOTP();
   };
 
   const handleBackToEmail = () => {
     setStep('email');
     setOtpCode('');
+    setEmailSent(false);
+    setResendCooldown(0);
   };
 
   return (
@@ -178,7 +214,9 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
         <CardDescription>
           {step === 'email' 
             ? 'Enter your email to receive a 4-digit verification code'
-            : `We sent a 4-digit code to ${email}`
+            : emailSent 
+              ? `We sent a 4-digit code to ${email}`
+              : 'Please wait while we send your code...'
           }
         </CardDescription>
       </CardHeader>
@@ -191,7 +229,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email address"
                   className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -200,7 +238,11 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading || !email}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || !email.trim() || !validateEmail(email.trim())}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -213,11 +255,19 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
           </form>
         ) : (
           <div className="space-y-6">
+            {emailSent && (
+              <div className="flex items-center justify-center text-green-600 mb-4">
+                <CheckCircle className="w-5 h-5 mr-2" />
+                <span className="text-sm">Code sent successfully!</span>
+              </div>
+            )}
+            
             <div className="flex justify-center">
               <InputOTP
                 maxLength={4}
                 value={otpCode}
                 onChange={(value) => setOtpCode(value)}
+                disabled={isLoading}
               >
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />
@@ -247,7 +297,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
               <Button
                 variant="ghost"
                 onClick={handleResendOTP}
-                disabled={resendCooldown > 0}
+                disabled={resendCooldown > 0 || isLoading}
                 className="text-sm"
               >
                 {resendCooldown > 0 
@@ -259,6 +309,7 @@ export default function OTPAuth({ onSuccess }: OTPAuthProps) {
               <Button
                 variant="ghost"
                 onClick={handleBackToEmail}
+                disabled={isLoading}
                 className="text-sm"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
